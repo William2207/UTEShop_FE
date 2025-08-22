@@ -25,6 +25,11 @@ export default function Dashboard() {
       <div className="rounded-2xl bg-white p-8 shadow">
         <h1 className="mb-2 text-2xl font-semibold">Xin chào 👋</h1>
         <p className="text-gray-700">Email: {me?.email}</p>
+
+        <p className="text-blue-600 font-bold mt-4">
+          ✅ Dashboard đang hoạt động!
+        </p>
+
         <button onClick={() => dispatch(logout())} className="mt-6 rounded-xl border px-4 py-2">
           Đăng xuất
         </button>

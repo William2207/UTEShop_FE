@@ -13,6 +13,7 @@ export const loginUser = createAsyncThunk("auth/login", async (payload, thunkAPI
 const initialState = {
   user: JSON.parse(localStorage.getItem("user") || "null"),
   token: localStorage.getItem("token") || null,
+  refreshToken: localStorage.getItem("refreshToken") || null, // 🆕
   loading: false,
   error: null,
 };
@@ -24,8 +25,10 @@ const authSlice = createSlice({
     logout(state) {
       state.user = null;
       state.token = null;
+      state.refreshToken = null; // 🆕
       localStorage.removeItem("user");
       localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken"); // 🆕
     },
   },
   extraReducers: (builder) => {
@@ -38,8 +41,10 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = action.payload.user;
         state.token = action.payload.token;
+        state.refreshToken = action.payload.refreshToken; // 🆕
         localStorage.setItem("user", JSON.stringify(action.payload.user));
         localStorage.setItem("token", action.payload.token);
+        localStorage.setItem("refreshToken", action.payload.refreshToken); // 🆕
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
