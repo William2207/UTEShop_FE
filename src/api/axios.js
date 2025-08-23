@@ -1,5 +1,5 @@
 import axios from "axios";
-import store from "../app/store"; // đường dẫn tới redux store
+import store from "../app/store";
 import { logout } from "../features/auth/authSlice";
 
 const api = axios.create({
@@ -26,10 +26,15 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem("refreshToken");
         if (!refreshToken) throw new Error("No refresh token");
 
-        const { data } = await api.post("/api/auth/refresh", { token: refreshToken });
+
+        // 🆕 gửi đúng field refreshToken
+        const { data } = await api.post("/api/auth/refresh", { refreshToken });
 
         // Lưu token mới
         localStorage.setItem("token", data.token);
+        if (data.refreshToken) {
+          localStorage.setItem("refreshToken", data.refreshToken);
+        }
         originalConfig.headers["Authorization"] = `Bearer ${data.token}`;
 
         return api(originalConfig); // Gọi lại request ban đầu
