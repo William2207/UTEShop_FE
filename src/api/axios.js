@@ -9,7 +9,7 @@ const api = axios.create({
 
 // Attach token nếu có
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token"); // 🔄 dùng sessionStorage
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -23,17 +23,16 @@ api.interceptors.response.use(
     if (err.response?.status === 401 && !originalConfig._retry) {
       originalConfig._retry = true;
       try {
-        const refreshToken = localStorage.getItem("refreshToken");
+        const refreshToken = sessionStorage.getItem("refreshToken"); // 🔄 dùng sessionStorage
         if (!refreshToken) throw new Error("No refresh token");
-
 
         // 🆕 gửi đúng field refreshToken
         const { data } = await api.post("/api/auth/refresh", { refreshToken });
 
         // Lưu token mới
-        localStorage.setItem("token", data.token);
+        sessionStorage.setItem("token", data.token);
         if (data.refreshToken) {
-          localStorage.setItem("refreshToken", data.refreshToken);
+          sessionStorage.setItem("refreshToken", data.refreshToken);
         }
         originalConfig.headers["Authorization"] = `Bearer ${data.token}`;
 

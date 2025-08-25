@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";   // 👈 thêm
+import { useNavigate } from "react-router-dom";
 import { loginUser } from "../features/auth/authSlice";
 import TextField from "../components/TextField";
 import Button from "../components/Button";
-import AuthCard from "../components/AuthCard";
+import { FcGoogle } from "react-icons/fc";
+import bgImage from "/public/biaLogin.jpg"; // 📌 import ảnh từ assets
 
 export default function LoginPage() {
   const dispatch = useDispatch();
-  const navigate = useNavigate();  // 👈 thêm
-  const { loading, error, user } = useSelector((s) => s.auth); // 👈 lấy user từ redux
+  const navigate = useNavigate();
+  const { loading, error, user } = useSelector((s) => s.auth);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -18,16 +19,26 @@ export default function LoginPage() {
     dispatch(loginUser({ email, password }));
   };
 
-  // 👇 theo dõi user, nếu login thành công thì chuyển trang
+  const handleGoogleLogin = () => {
+    console.log("Google login clicked");
+  };
+
   useEffect(() => {
-    if (user) {
-      navigate("/dashboard"); // hoặc "/" tuỳ bạn muốn
-    }
+    if (user) navigate("/dashboard");
   }, [user, navigate]);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <AuthCard title="Đăng nhập">
+    <div
+      className="min-h-screen flex items-center justify-center bg-cover bg-center relative"
+      style={{ backgroundImage: "url('/biaLogin.jpg')" }}
+    >
+      {/* Overlay mờ đen phủ nền */}
+      <div className="absolute inset-0 bg-black/50"></div>
+
+      {/* Form login giữ nguyên */}
+      <div className="relative z-10 w-full max-w-md bg-white p-8 rounded-2xl shadow-lg">
+        <h2 className="text-2xl font-bold text-center mb-6">Đăng nhập</h2>
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <TextField
             label="Email"
@@ -48,7 +59,33 @@ export default function LoginPage() {
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </Button>
         </form>
-      </AuthCard>
+
+        <div className="mt-4">
+          <button
+            onClick={handleGoogleLogin}
+            className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2 hover:bg-gray-50 transition"
+          >
+            <FcGoogle className="text-xl" />
+            <span className="text-sm font-medium text-gray-700">
+              Đăng nhập với Google
+            </span>
+          </button>
+        </div>
+
+        <div className="mt-6 flex flex-col gap-2 text-sm text-center text-gray-600">
+          <p>
+            Chưa có tài khoản?{" "}
+            <a href="/register" className="text-indigo-600 hover:underline">
+              Đăng ký ngay
+            </a>
+          </p>
+          <p>
+            <a href="/forgot-password" className="text-indigo-600 hover:underline">
+              Quên mật khẩu?
+            </a>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
