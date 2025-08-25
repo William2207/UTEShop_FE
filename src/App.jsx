@@ -1,5 +1,7 @@
 import { useState } from "react";
 import MainLayout from "./layouts/MainLayout";
+import { Provider } from "react-redux";
+import store from "./redux/store";
 import "./App.css";
 import {
   Route,
@@ -8,17 +10,23 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import { UserProfile } from "./pages/Profile/Profile";
+import { LoginPage } from "./pages/LoginPage";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<MainLayout />}>
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/profile" element={<UserProfile />} />
     </Route>
   )
 );
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>
+  );
 }
 
 export default App;

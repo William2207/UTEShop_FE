@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, MapPin, Edit, Trash2, Plus, Lock } from "lucide-react";
-
+import { useEffect } from "react";
 export function UserProfile() {
   const [activeTab, setActiveTab] = useState("personal");
 
@@ -177,7 +177,9 @@ export function UserProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Nhập Lại Mật Khẩu Mới</Label>
+                  <Label htmlFor="confirm-password">
+                    Nhập Lại Mật Khẩu Mới
+                  </Label>
                   <Input
                     id="confirm-password"
                     type="password"
@@ -196,9 +198,7 @@ export function UserProfile() {
               </div>
               <Separator />
               <div className="flex gap-2">
-                <Button className="bg-primary hover:bg-primary/90">
-                  Lưu
-                </Button>
+                <Button className="bg-primary hover:bg-primary/90">Lưu</Button>
                 <Button variant="outline">Hủy</Button>
               </div>
             </CardContent>
