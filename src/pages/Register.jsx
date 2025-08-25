@@ -14,29 +14,63 @@ export default function Register() {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
-  const [name, setName] = useState("");
+  const [username, setName] = useState("");
   const [password, setPassword] = useState("");
 
-  useEffect(
-    () => () => {
+  // Clear thông báo khi unmount
+  useEffect(() => {
+    return () => {
       dispatch(clearFeedback());
-    },
-    [dispatch]
-  );
+    };
+  }, [dispatch]);
 
+  // Gửi OTP
   const handleSendOtp = async (e) => {
     e.preventDefault();
-    await dispatch(requestRegisterOtp(email)).unwrap();
-    setStep(2);
+    if (!email) {
+      alert("Vui lòng nhập email");
+      return;
+    }
+    try {
+      await dispatch(requestRegisterOtp({ email })).unwrap();
+      setStep(2);
+    } catch (err) {
+      console.error("Send OTP failed:", err);
+    }
   };
+
+  // Xác minh OTP + tạo tài khoản
   const handleVerify = async (e) => {
     e.preventDefault();
-    await dispatch(verifyRegister({ email, code, name, password })).unwrap();
+
+    // Kiểm tra trước khi gửi
+    if (!email || !username || !password || code.length !== 6) {
+      alert("Vui lòng điền đầy đủ thông tin và OTP 6 chữ số");
+      return;
+    }
+    if (username.length < 2) {
+      alert("Họ tên phải ≥ 2 ký tự");
+      return;
+    }
+    if (password.length < 6) {
+      alert("Mật khẩu phải ≥ 6 ký tự");
+      return;
+    }
+
+    try {
+      // Gửi đúng field name cho backend Zod validate
+      await dispatch(
+        verifyRegister({ email, code, username, password })
+      ).unwrap();
+    } catch (err) {
+      console.error("Verify failed:", err);
+    }
   };
 
   return (
-    <div className="bg-white p-6 rounded shadow">
+    <div className="bg-white p-6 rounded shadow max-w-md mx-auto mt-10">
       <h1 className="text-2xl font-bold mb-4">Đăng ký (OTP)</h1>
+
       {message && (
         <div className="p-3 mb-3 bg-green-50 border border-green-200 rounded">
           {message}
@@ -72,7 +106,7 @@ export default function Register() {
           <OtpInput value={code} onChange={setCode} />
           <input
             required
-            value={name}
+            value={username}
             onChange={(e) => setName(e.target.value)}
             placeholder="Họ tên"
             className="w-full border rounded px-3 py-2"
@@ -82,7 +116,7 @@ export default function Register() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mật khẩu (>=6)"
+            placeholder="Mật khẩu (>=6 ký tự)"
             className="w-full border rounded px-3 py-2"
           />
           <button
