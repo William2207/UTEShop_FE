@@ -55,9 +55,14 @@ export function LoginPage() {
           />
 
           {error && <p className="text-sm text-red-600">{error}</p>}
-          <Button type="submit" disabled={loading}>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-black py-2.5 text-white font-medium disabled:opacity-60"
+          >
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-          </Button>
+          </button>
+
         </form>
 
         <div className="mt-4">
@@ -81,7 +86,7 @@ export function LoginPage() {
           </p>
           <p>
             <a
-              href="/forgot-password"
+              href="/forgot"
               className="text-indigo-600 hover:underline"
             >
               Quên mật khẩu?

@@ -1,3 +1,4 @@
+// src/pages/Register.jsx
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -11,21 +12,21 @@ export default function Register() {
   const dispatch = useDispatch();
   const { loading, error, message } = useSelector((s) => s.auth);
 
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(1); // 1: nhập email, 2: nhập OTP + info
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-
-  // Lỗi cục bộ (client-side), khác với error từ Redux (server-side)
   const [localError, setLocalError] = useState(null);
 
-  // Clear feedback khi unmount
+  // Clear feedback khi rời trang
   useEffect(() => {
-    return () => dispatch(clearFeedback());
+    return () => {
+      dispatch(clearFeedback());
+    };
   }, [dispatch]);
 
-  // Clear feedback + lỗi cục bộ khi đổi step
+  // Clear khi đổi step
   useEffect(() => {
     setLocalError(null);
     dispatch(clearFeedback());
@@ -35,21 +36,15 @@ export default function Register() {
     e.preventDefault();
     setLocalError(null);
 
-    // Validate cơ bản phía client
-    if (!email) {
-      return setLocalError("Vui lòng nhập email.");
-    }
+    if (!email) return setLocalError("Vui lòng nhập email.");
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!emailOk) {
-      return setLocalError("Email không hợp lệ.");
-    }
+    if (!emailOk) return setLocalError("Email không hợp lệ.");
 
     try {
-      // ✅ Quan trọng: truyền object { email } thay vì string
+      // PHẢI truyền object { email }
       await dispatch(requestRegisterOtp({ email })).unwrap();
       setStep(2);
     } catch (err) {
-      // err có thể là { message, errors }
       const msg =
         err?.errors?.[0]?.msg ||
         err?.message ||
@@ -62,22 +57,14 @@ export default function Register() {
     e.preventDefault();
     setLocalError(null);
 
-    // Validate cơ bản phía client
-    if (code.length !== 6) {
-      return setLocalError("Mã OTP phải gồm 6 ký tự.");
-    }
-    if (!name.trim()) {
-      return setLocalError("Vui lòng nhập họ tên.");
-    }
-    if (password.length < 6) {
-      return setLocalError("Mật khẩu tối thiểu 6 ký tự.");
-    }
+    if (code.length !== 6) return setLocalError("Mã OTP phải gồm 6 ký tự.");
+    if (!name.trim()) return setLocalError("Vui lòng nhập họ tên.");
+    if (password.length < 6) return setLocalError("Mật khẩu tối thiểu 6 ký tự.");
 
     try {
       await dispatch(verifyRegister({ email, code, name, password })).unwrap();
-      // Tuỳ luồng của bạn: có thể chuyển hướng sang /login hoặc hiển thị message
-      // Ví dụ: reset form
-      // setStep(1); setEmail(""); setCode(""); setName(""); setPassword("");
+      // TODO: điều hướng nếu cần, ví dụ:
+      // navigate("/login");
     } catch (err) {
       const msg =
         err?.errors?.[0]?.msg ||
@@ -88,90 +75,148 @@ export default function Register() {
   };
 
   return (
-    <div className="bg-white p-6 rounded shadow max-w-md mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Đăng ký (OTP)</h1>
+    <div className="min-h-screen bg-gray-700/70 flex items-center justify-center p-4">
+      <div className="w-full max-w-xl">
+        <div className="mx-auto w-full max-w-md rounded-2xl bg-white shadow-lg p-6 sm:p-8">
+          <h1 className="text-2xl font-extrabold text-center mb-6">Đăng ký</h1>
 
-      {/* Thông báo thành công từ server */}
-      {message && (
-        <div className="p-3 mb-3 bg-green-50 border border-green-200 rounded text-green-800">
-          {message}
+          {/* Thông báo thành công từ server */}
+          {message && (
+            <div
+              className="mb-4 rounded border border-green-200 bg-green-50 p-3 text-green-800"
+              aria-live="polite"
+            >
+              {message}
+            </div>
+          )}
+
+          {/* Lỗi server */}
+          {error && (
+            <div
+              className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-red-800"
+              aria-live="assertive"
+            >
+              {typeof error === "string" ? error : error?.message || "Có lỗi xảy ra"}
+            </div>
+          )}
+
+          {/* Lỗi cục bộ */}
+          {localError && (
+            <div
+              className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-red-800"
+              aria-live="assertive"
+            >
+              {localError}
+            </div>
+          )}
+
+          {step === 1 && (
+            <form onSubmit={handleSendOtp} className="space-y-4">
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium">Email</span>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-black"
+                  autoComplete="email"
+                />
+              </label>
+
+              <button
+                type="submit"
+                disabled={loading || !email}
+                className="w-full rounded-lg bg-black py-2.5 text-white font-medium disabled:opacity-60"
+              >
+                {loading ? "Đang gửi..." : "Gửi OTP"}
+              </button>
+
+              {/* Divider “hoặc” */}
+              <div className="relative my-2">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-white px-2 text-xs text-gray-500">hoặc</span>
+                </div>
+              </div>
+
+             
+
+              <div className="mt-2 text-center text-sm">
+                Đã có tài khoản?{" "}
+                <a href="/login" className="text-blue-600 hover:underline">
+                  Đăng nhập
+                </a>
+              </div>
+            </form>
+          )}
+
+          {step === 2 && (
+            <form onSubmit={handleVerify} className="space-y-4">
+              <div>
+                <span className="mb-1 block text-sm font-medium">Mã OTP</span>
+                <OtpInput value={code} onChange={setCode} />
+              </div>
+
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium">Họ tên</span>
+                <input
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Nguyễn Văn A"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-black"
+                  autoComplete="name"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium">Mật khẩu</span>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Mật khẩu (>= 6 ký tự)"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-black"
+                  autoComplete="new-password"
+                  minLength={6}
+                />
+              </label>
+
+              <button
+                type="submit"
+                disabled={loading || code.length !== 6 || !name || password.length < 6}
+                className="w-full rounded-lg bg-black py-2.5 text-white font-medium disabled:opacity-60"
+              >
+                {loading ? "Đang xác minh..." : "Hoàn tất đăng ký"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setStep(1);
+                  setCode("");
+                  dispatch(clearFeedback());
+                }}
+                className="w-full rounded-lg border border-gray-300 py-2.5 font-medium hover:bg-gray-50"
+              >
+                Dùng email khác
+              </button>
+
+              <div className="mt-2 text-center text-sm">
+                Đã có tài khoản?{" "}
+                <a href="/login" className="text-blue-600 hover:underline">
+                  Đăng nhập
+                </a>
+              </div>
+            </form>
+          )}
         </div>
-      )}
-
-      {/* Lỗi server từ Redux */}
-      {error && (
-        <div className="p-3 mb-3 bg-red-50 border border-red-200 rounded text-red-800">
-          {typeof error === "string" ? error : error?.message || "Có lỗi xảy ra"}
-        </div>
-      )}
-
-      {/* Lỗi cục bộ (client-side) */}
-      {localError && (
-        <div className="p-3 mb-3 bg-red-50 border border-red-200 rounded text-red-800">
-          {localError}
-        </div>
-      )}
-
-      {step === 1 && (
-        <form onSubmit={handleSendOtp} className="space-y-4">
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            className="w-full border rounded px-3 py-2"
-            autoComplete="email"
-          />
-          <button
-            disabled={loading || !email}
-            className="w-full rounded bg-black text-white py-2 disabled:opacity-60"
-          >
-            {loading ? "Đang gửi..." : "Gửi OTP"}
-          </button>
-        </form>
-      )}
-
-      {step === 2 && (
-        <form onSubmit={handleVerify} className="space-y-4">
-          <OtpInput value={code} onChange={setCode} />
-          <input
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Họ tên"
-            className="w-full border rounded px-3 py-2"
-            autoComplete="name"
-          />
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mật khẩu (>= 6 ký tự)"
-            className="w-full border rounded px-3 py-2"
-            autoComplete="new-password"
-          />
-          <button
-            disabled={loading || code.length !== 6 || !name || password.length < 6}
-            className="w-full rounded bg-black text-white py-2 disabled:opacity-60"
-          >
-            {loading ? "Đang xác minh..." : "Hoàn tất đăng ký"}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setStep(1);
-              setCode("");
-              dispatch(clearFeedback());
-            }}
-            className="w-full border rounded py-2"
-          >
-            Dùng email khác
-          </button>
-        </form>
-      )}
+      </div>
     </div>
   );
 }
