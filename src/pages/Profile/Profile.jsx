@@ -18,14 +18,6 @@ import { User, MapPin, Edit, Trash2, Plus, Lock } from "lucide-react";
 import { useEffect } from "react";
 export function UserProfile() {
   const [activeTab, setActiveTab] = useState("personal");
-
-  // Ex data
-  // const userInfo = {
-  //   name: "Sarah Johnson",
-  //   email: "sarah.johnson@email.com",
-  //   phone: "+1 (555) 123-4567",
-  //   avatar: "/professional-woman-avatar.png",
-  // };
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -34,7 +26,7 @@ export function UserProfile() {
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        const [userResponse, addressesResponse] = await Promise.all([
+        const [userResponse] = await Promise.all([
           api.get("/user/profile"), // Dùng instance 'api'
         ]);
 
@@ -215,45 +207,56 @@ export function UserProfile() {
                   Thay đổi địa chỉ nhận hàng của bạn
                 </CardDescription>
               </div>
-              <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Plus className="h-4 w-4 mr-2" />
-                Thêm Địa Chỉ
-              </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {addresses.map((address) => (
-                  <div
-                    key={address.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold">{address.type}</p>
-                          {address.isDefault && (
-                            <Badge variant="secondary">Default</Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {userInfo.address}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {address.city}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+              {userInfo?.address ? (
+                // ---- TRƯỜNG HỢP 1: NẾU `userInfo` CÓ THÔNG TIN ĐỊA CHỈ ----
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <div>
+                      {/* 
+            Vì không còn 'type', ta có thể dùng một tiêu đề tĩnh 
+            hoặc loại bỏ dòng này nếu không cần thiết.
+          */}
+                      <p className="font-semibold">Saved Address</p>
+
+                      {/* 
+            Hiển thị trực tiếp chuỗi địa chỉ từ userInfo.address.
+          */}
+                      <p className="text-sm text-muted-foreground">
+                        {userInfo.address}
+                      </p>
                     </div>
                   </div>
-                ))}
-              </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-label="Edit Address"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-label="Delete Address"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                // ---- TRƯỜỢNG HỢP 2: NẾU `userInfo` KHÔNG CÓ ĐỊA CHỈ ----
+                <div className="text-center py-8 px-4 border-2 border-dashed rounded-lg">
+                  <p className="text-muted-foreground mb-4">
+                    Bạn chưa có địa chỉ nào được lưu.
+                  </p>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Thêm địa chỉ mới
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

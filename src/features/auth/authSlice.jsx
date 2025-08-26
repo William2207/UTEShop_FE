@@ -47,9 +47,9 @@ export const loginUser = createApiThunk("auth/login", "/auth/login");
 // 👉 Sử dụng sessionStorage để duy trì trạng thái đăng nhập qua các lần tải lại trang
 const initialState = {
   // Lấy từ sessionStorage nếu có
-  user: JSON.parse(sessionStorage.getItem("user") || "null"),
-  token: sessionStorage.getItem("token") || null,
-  refreshToken: sessionStorage.getItem("refreshToken") || null,
+  user: JSON.parse(localStorage.getItem("user") || "null"),
+  token: localStorage.getItem("token") || null,
+  refreshToken: localStorage.getItem("refreshToken") || null,
   // Trạng thái cục bộ
   loading: false,
   error: null,
@@ -67,9 +67,9 @@ const authSlice = createSlice({
       state.refreshToken = null;
       state.error = null;
       state.message = null;
-      sessionStorage.removeItem("user");
-      sessionStorage.removeItem("token");
-      sessionStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
     },
     clearFeedback(state) {
       state.error = null;
@@ -98,9 +98,9 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.refreshToken = action.payload.refreshToken;
 
-        sessionStorage.setItem("user", JSON.stringify(action.payload.user));
-        sessionStorage.setItem("token", action.payload.token);
-        sessionStorage.setItem("refreshToken", action.payload.refreshToken);
+        localStorage.setItem("user", JSON.stringify(action.payload.user));
+        localStorage.setItem("token", action.payload.token);
+        localStorage.setItem("refreshToken", action.payload.refreshToken);
       })
       .addCase(loginUser.rejected, handleRejected)
 

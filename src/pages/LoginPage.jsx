@@ -24,7 +24,7 @@ export function LoginPage() {
   };
 
   useEffect(() => {
-    if (user) navigate("/dashboard");
+    if (user) navigate("/profile");
   }, [user, navigate]);
 
   return (
