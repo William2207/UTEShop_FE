@@ -15,6 +15,7 @@ import { UserProfile } from "./pages/Profile/Profile";
 import { LoginPage } from "./pages/LoginPage";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import ProductDetailPage from "./pages/ProductDetailPage";
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<MainLayout />}>
@@ -24,6 +25,7 @@ const router = createBrowserRouter(
       <Route path="/profile" element={<UserProfile />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot" element={<ForgotPassword />} />
+      <Route path="/products/:id" element={<ProductDetailPage />} />
     </Route>
   )
 );

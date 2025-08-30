@@ -19,18 +19,25 @@ const navbar = () => {
   const handleLogoClick = () => {
     navigate("/");
   };
+
+  const handleShopClick = () => {
+    navigate("/products");
+  };
   return (
     <nav className="w-full bg-white border-b border-gray-200 px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
-        <div onClick={handleLogoClick} className="flex-shrink-0">
-          <h1 className="text-2xl font-bold text-black">UTE SHOP</h1>
+        <div onClick={handleLogoClick} className="flex-shrink-0 cursor-pointer">
+          <h1 className="text-2xl font-bold text-black hover:text-blue-600 transition-colors">UTE SHOP</h1>
         </div>
 
         {/* Navigation Menu */}
         <div className="hidden md:flex items-center space-x-8">
-          <div className="flex items-center space-x-1 cursor-pointer hover:text-blue-600">
-            <span className="text-gray-700">Shop</span>
+          <div
+            onClick={handleShopClick}
+            className="flex items-center space-x-1 cursor-pointer hover:text-blue-600 transition-colors"
+          >
+            <span className="text-gray-700 hover:text-blue-600">Shop</span>
             <ChevronDown className="h-4 w-4 text-gray-700" />
           </div>
           <a href="#" className="text-gray-700 hover:text-blue-600">
