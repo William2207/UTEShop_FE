@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 const HomePage = () => {
     const [blocks, setBlocks] = useState(null);
+    const [totals, setTotals] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -13,7 +14,10 @@ const HomePage = () => {
                 setLoading(true);
                 setError(null);
                 const res = await axios.get("/products/home-blocks");
+                console.log("API Response:", res.data);
+                console.log("Totals:", res.data.totals);
                 setBlocks(res.data);
+                setTotals(res.data.totals);
             } catch (err) {
                 console.error("Lỗi khi lấy home blocks:", err);
                 setError("Không thể tải dữ liệu sản phẩm");
@@ -49,37 +53,64 @@ const HomePage = () => {
     if (!blocks) return null;
 
     return (
-        <div className="max-w-7xl mx-auto p-4 space-y-8">
-            <div className="text-center mb-8">
+        <div className="max-w-7xl mx-auto p-4">
+            <div className="text-center mb-12">
                 <h1 className="text-3xl font-bold text-gray-800 mb-2">Chào mừng đến với UTEShop</h1>
                 <p className="text-gray-600">Khám phá những sản phẩm chất lượng nhất</p>
             </div>
 
-            <Section
-                title="🆕 Sản phẩm mới nhất"
-                products={blocks.newest}
+                        <Section 
+                title="Sản phẩm mới nhất" 
+                products={blocks.newest} 
                 maxCols={4}
+                viewAllLink="/new-arrivals"
+                sectionStyle="newest"
+                totalCount={totals?.newest}
+                showViewAll={true}
             />
-            <Section
-                title="🔥 Sản phẩm bán chạy"
-                products={blocks.bestSelling}
+
+            <div className="my-16"></div>
+
+                        <Section 
+                title="Sản phẩm bán chạy" 
+                products={blocks.bestSelling} 
                 maxCols={3}
+                viewAllLink="/products?sort=best-selling"
+                sectionStyle="bestselling"
+                totalCount={totals?.bestSelling}
+                showViewAll={true}
             />
-            <Section
-                title="👁️ Sản phẩm xem nhiều"
-                products={blocks.mostViewed}
+            
+            <div className="my-16"></div>
+            
+            <Section 
+                title="Sản phẩm xem nhiều" 
+                products={blocks.mostViewed} 
                 maxCols={4}
+                viewAllLink="/products?sort=most-viewed"
+                sectionStyle="mostviewed"
+                totalCount={totals?.mostViewed}
+                showViewAll={true}
             />
-            <Section
-                title="🎉 Khuyến mãi cao nhất"
-                products={blocks.topDiscount}
+            
+            <div className="my-16"></div>
+            
+            <Section 
+                title="Khuyến mãi cao nhất" 
+                products={blocks.topDiscount} 
                 maxCols={2}
+                viewAllLink="/products?sort=top-discount"
+                sectionStyle="discount"
+                totalCount={totals?.topDiscount}
+                showViewAll={true}
             />
         </div>
     );
 };
 
-const Section = ({ title, products, maxCols = 4 }) => {
+const Section = ({ title, products, maxCols = 4, viewAllLink, sectionStyle, totalCount, showViewAll }) => {
+    const navigate = useNavigate();
+
     if (!products || products.length === 0) return null;
 
     const gridCols = {
@@ -90,19 +121,47 @@ const Section = ({ title, products, maxCols = 4 }) => {
         8: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8"
     };
 
+    const sectionStyles = {
+        newest: "bg-gradient-to-r from-blue-50 to-indigo-50",
+        bestselling: "bg-gradient-to-r from-red-50 to-pink-50",
+        mostviewed: "bg-gradient-to-r from-green-50 to-emerald-50",
+        discount: "bg-gradient-to-r from-yellow-50 to-orange-50"
+    };
+
     return (
-        <section className="mb-12">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
-                <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    {products.length} sản phẩm
-                </span>
+        <section className={`py-12 px-8 rounded-3xl ${sectionStyles[sectionStyle] || 'bg-gray-50'}`}>
+            {/* Section Title */}
+            <div className="text-center mb-12">
+                <h2 className="text-4xl font-bold text-gray-800 mb-4 uppercase tracking-wider">
+                    {title}
+                </h2>
+                <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mb-6"></div>
+                <p className="text-gray-600">
+                    Hiển thị {products.length} / {totalCount || products.length} sản phẩm
+                </p>
             </div>
-            <div className={`grid ${gridCols[maxCols]} gap-6`}>
+
+            {/* Products Grid */}
+            <div className={`grid ${gridCols[maxCols]} gap-6 mb-8`}>
                 {products.map((p) => (
                     <ProductCard key={p._id} product={p} />
                 ))}
             </div>
+
+            {/* View All Button */}
+            {showViewAll && viewAllLink && (
+                <div className="text-center">
+                    <button
+                        onClick={() => navigate(viewAllLink)}
+                        className="inline-flex items-center px-8 py-3 bg-white border-2 border-gray-300 rounded-full font-semibold text-gray-700 hover:border-blue-500 hover:text-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                    >
+                        <span>Xem thêm</span>
+                        <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+            )}
         </section>
     );
 };

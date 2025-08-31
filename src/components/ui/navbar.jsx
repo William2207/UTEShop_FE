@@ -23,6 +23,18 @@ const navbar = () => {
   const handleShopClick = () => {
     navigate("/products");
   };
+
+  const handleNewArrivalsClick = () => {
+    navigate("/new-arrivals");
+  };
+
+  const handleOnSaleClick = () => {
+    navigate("/products?sort=top-discount");
+  };
+
+  const handleBrandsClick = () => {
+    navigate("/products"); // hoặc trang brands riêng nếu có
+  };
   return (
     <nav className="w-full bg-white border-b border-gray-200 px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -40,15 +52,24 @@ const navbar = () => {
             <span className="text-gray-700 hover:text-blue-600">Shop</span>
             <ChevronDown className="h-4 w-4 text-gray-700" />
           </div>
-          <a href="#" className="text-gray-700 hover:text-blue-600">
+          <span
+            onClick={handleOnSaleClick}
+            className="text-gray-700 hover:text-blue-600 cursor-pointer transition-colors"
+          >
             On Sale
-          </a>
-          <a href="#" className="text-gray-700 hover:text-blue-600">
+          </span>
+          <span
+            onClick={handleNewArrivalsClick}
+            className="text-gray-700 hover:text-blue-600 cursor-pointer transition-colors"
+          >
             New Arrivals
-          </a>
-          <a href="#" className="text-gray-700 hover:text-blue-600">
+          </span>
+          <span
+            onClick={handleBrandsClick}
+            className="text-gray-700 hover:text-blue-600 cursor-pointer transition-colors"
+          >
             Brands
-          </a>
+          </span>
         </div>
 
         {/* Search Bar */}
