@@ -4,10 +4,19 @@ import {
   User,
   ChevronDown,
   ShoppingBag,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/context/AuthContext";
 
 const navbar = () => {
   const navigate = useNavigate();
@@ -19,6 +28,13 @@ const navbar = () => {
   const handleLogoClick = () => {
     navigate("/");
   };
+
+  const {logout} = useAuth();
+
+  const handleLogout = () => {
+    // Add logout logic here (clear tokens, redirect, etc.)
+  };
+
   return (
     <nav className="w-full bg-white border-b border-gray-200 px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -64,14 +80,27 @@ const navbar = () => {
           <Button variant="ghost" size="icon" className="hover:bg-gray-100">
             <ShoppingBag className="h-5 w-5 text-gray-700" />
           </Button>
-          <Button
-            onClick={handleUserLogoClick}
-            variant="ghost"
-            size="icon"
-            className="hover:bg-gray-100"
-          >
-            <User className="h-5 w-5 text-gray-700" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="hover:bg-gray-100">
+                <User className="h-5 w-5 text-gray-700" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={handleUserLogoClick}>
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={logout}
+                className="text-red-600 focus:text-red-600"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
