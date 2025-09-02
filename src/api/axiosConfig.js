@@ -8,8 +8,8 @@ const api = axios.create({
 // Thêm một request interceptor
 api.interceptors.request.use(
   (config) => {
-    // Lấy token từ localStorage
-    const token = localStorage.getItem("token");
+    // Lấy token từ sessionStorage
+    const token = sessionStorage.getItem("token");
 
     // Nếu token tồn tại, thêm nó vào header Authorization
     if (token) {

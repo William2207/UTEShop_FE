@@ -13,6 +13,8 @@ import { UserProfile } from "./pages/Profile/Profile";
 import { LoginPage } from "./pages/LoginPage";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+
+
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<MainLayout />}>
