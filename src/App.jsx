@@ -13,7 +13,7 @@ import { UserProfile } from "./pages/Profile/Profile";
 import { LoginPage } from "./pages/LoginPage";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
-import { AuthProvider } from "./context/AuthContext";
+
 
 const router = createBrowserRouter(
   createRoutesFromElements(

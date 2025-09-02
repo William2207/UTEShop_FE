@@ -16,11 +16,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/context/AuthContext";
-
+import { logout } from "../../features/auth/authSlice";
+import { useSelector, useDispatch } from 'react-redux';
 const navbar = () => {
   const navigate = useNavigate();
-
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user); 
   const handleUserLogoClick = () => {
     navigate("/profile");
   };
@@ -28,11 +29,9 @@ const navbar = () => {
   const handleLogoClick = () => {
     navigate("/");
   };
-
-  const {logout} = useAuth();
-
   const handleLogout = () => {
-    // Add logout logic here (clear tokens, redirect, etc.)
+    dispatch(logout());
+    navigate("/");
   };
 
   return (
@@ -93,7 +92,7 @@ const navbar = () => {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={logout}
+                onClick={handleLogout}
                 className="text-red-600 focus:text-red-600"
               >
                 <LogOut className="mr-2 h-4 w-4" />
