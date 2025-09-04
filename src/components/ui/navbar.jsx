@@ -21,7 +21,7 @@ import { useSelector, useDispatch } from 'react-redux';
 const navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const user = useSelector((state) => state.auth.user); 
+  const user = useSelector((state) => state.auth.user);
   const handleUserLogoClick = () => {
     navigate("/profile");
   };
