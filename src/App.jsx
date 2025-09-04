@@ -1,43 +1,42 @@
-import { useState } from "react";
-import MainLayout from "./layouts/MainLayout";
-import { Provider } from "react-redux";
-import store from "./redux/store";
-import "./App.css";
-import ProductListPage from "./pages/ProductListPage";
-import HomePage from "./pages/HomePage";
-import {
-  Route,
-  createBrowserRouter,
-  createRoutesFromElements,
-  RouterProvider,
-} from "react-router-dom";
-import { UserProfile } from "./pages/Profile/Profile";
-import { LoginPage } from "./pages/LoginPage";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import store from './redux/store';
 
-import ProductDetailPage from "./pages/ProductDetailPage";
-import NewArrivalsPage from "./pages/NewArrivalsPage";
-
-const router = createBrowserRouter(
-  createRoutesFromElements(
-    <Route path="/" element={<MainLayout />}>
-      <Route index element={<HomePage />} />
-      <Route path="/products" element={<ProductListPage />} />
-      <Route path="/new-arrivals" element={<NewArrivalsPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/profile" element={<UserProfile />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot" element={<ForgotPassword />} />
-      <Route path="/products/:id" element={<ProductDetailPage />} />
-    </Route>
-  )
-);
+import MainLayout from './layouts/MainLayout';
+import HomePage from './pages/HomePage';
+import { LoginPage } from './pages/LoginPage';
+import Register from './pages/Register';
+import ProductDetailPage from './pages/ProductDetailPage';
+import ProductListPage from './pages/ProductListPage';
+import NewArrivalsPage from './pages/NewArrivalsPage';
+import OrderPage from './pages/OrderPage';
+import { UserProfile } from './pages/Profile/Profile';
+import CheckoutPage from './pages/CheckoutPage';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function App() {
   return (
     <Provider store={store}>
-      <RouterProvider router={router} />
+      <Router>
+        <Routes>
+          <Route
+            path="/"
+            element={<MainLayout />}
+            errorElement={<ErrorBoundary />}
+          >
+            <Route index element={<HomePage />} />
+            <Route path="login" element={<LoginPage />} />
+            <Route path="register" element={<Register />} />
+            <Route path="products" element={<ProductListPage />} />
+            <Route path="products/:id" element={<ProductDetailPage />} />
+            <Route path="new-arrivals" element={<NewArrivalsPage />} />
+            <Route path="orders" element={<OrderPage />} />
+            <Route path="profile" element={<UserProfile />} />
+            <Route path="checkout" element={<CheckoutPage />} />
+          </Route>
+        </Routes>
+      </Router>
     </Provider>
   );
 }

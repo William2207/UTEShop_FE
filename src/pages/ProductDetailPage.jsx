@@ -1,10 +1,22 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "../api/axiosConfig";
+import { useDispatch, useSelector } from "react-redux";
+import axios from '../api/axiosConfig';
+import { createOrder } from '../features/order/orderSlice';
+import { Button } from '../components/ui/button';
+
+// Tạm thời mock toast nếu chưa có
+const toast = {
+    success: (message) => alert(message),
+    error: (message) => alert(message)
+};
 
 export default function ProductDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const { user } = useSelector((state) => state.auth);
+
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -51,6 +63,23 @@ export default function ProductDetailPage() {
     const handleAddToCart = () => {
         // TODO: Implement add to cart functionality
         alert(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
+    };
+
+    const handleCODPayment = () => {
+        // Kiểm tra đăng nhập
+        if (!user) {
+            alert("Vui lòng đăng nhập để thanh toán");
+            navigate('/login');
+            return;
+        }
+
+        // Chuyển sang trang thanh toán với thông tin sản phẩm
+        navigate('/checkout', {
+            state: {
+                product: product,
+                quantity: quantity
+            }
+        });
     };
 
     if (loading) {
@@ -224,6 +253,13 @@ export default function ProductDetailPage() {
                             >
                                 Thêm vào giỏ hàng
                             </button>
+
+                            <button
+                                onClick={handleCODPayment}
+                                className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                            >
+                                Thanh toán COD ngay
+                            </button>
                         </div>
                     ) : (
                         <div className="text-center py-4">
@@ -231,7 +267,7 @@ export default function ProductDetailPage() {
                         </div>
                     )}
 
-                    {/* Back Button */}
+                    {/* Quay lại */}
                     <button
                         onClick={() => navigate(-1)}
                         className="w-full border border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
