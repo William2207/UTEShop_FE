@@ -14,8 +14,8 @@ const createApiThunk = (name, url, method = "post") => {
       // Sử dụng rejectWithValue để gửi payload lỗi có cấu trúc đến reducer
       return thunkAPI.rejectWithValue(
         err.response?.data?.error ||
-          err.response?.data?.message ||
-          "Đã xảy ra lỗi"
+        err.response?.data?.message ||
+        "Đã xảy ra lỗi"
       );
     }
   });
@@ -74,6 +74,12 @@ const authSlice = createSlice({
     clearFeedback(state) {
       state.error = null;
       state.message = null;
+    },
+    updateUserProfile(state, action) {
+      // Cập nhật thông tin user trong Redux store
+      state.user = { ...state.user, ...action.payload };
+      // Cập nhật sessionStorage
+      sessionStorage.setItem("user", JSON.stringify(state.user));
     },
   },
   // Reducers cho các hành động bất đồng bộ (từ createAsyncThunk)
@@ -144,7 +150,7 @@ const authSlice = createSlice({
 // ------------------- Exports -------------------
 
 // Export các actions đồng bộ
-export const { logout, clearFeedback } = authSlice.actions;
+export const { logout, clearFeedback, updateUserProfile } = authSlice.actions;
 
 // Export reducer để thêm vào store
 export default authSlice.reducer;

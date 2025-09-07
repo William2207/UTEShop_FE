@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { createOrder } from '../features/order/orderSlice';
+import { updateUserProfile } from '../features/auth/authSlice';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
+import api from '../api/axiosConfig';
 
 const CheckoutPage = () => {
     const dispatch = useDispatch();
@@ -17,6 +19,23 @@ const CheckoutPage = () => {
     const [quantity, setQuantity] = useState(1);
     const [shippingAddress, setShippingAddress] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
+
+    // Fetch thông tin user mới nhất từ API
+    useEffect(() => {
+        const fetchUserProfile = async () => {
+            if (user) {
+                try {
+                    const response = await api.get('/user/profile');
+                    // Cập nhật Redux store với thông tin mới nhất
+                    dispatch(updateUserProfile(response.data));
+                } catch (error) {
+                    console.error('Lỗi khi fetch thông tin user:', error);
+                }
+            }
+        };
+
+        fetchUserProfile();
+    }, [dispatch, user]);
 
     useEffect(() => {
         // Kiểm tra xem có thông tin sản phẩm được truyền không
@@ -48,7 +67,7 @@ const CheckoutPage = () => {
         if (user?.phone) {
             setPhoneNumber(user.phone);
         }
-    }, [location, user, navigate]);
+    }, [location, user, navigate, dispatch]);
 
     const handleCreateOrder = async () => {
         // Kiểm tra địa chỉ
