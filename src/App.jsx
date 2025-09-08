@@ -14,7 +14,8 @@ import OrderPage from './pages/OrderPage';
 import { UserProfile } from './pages/Profile/Profile';
 import CheckoutPage from './pages/CheckoutPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
-
+import { OrderTracking } from './pages/Profile/orderTracking';
+import { PurchaseHistory } from './pages/Profile/purchaseHistory';
 function App() {
   return (
     <Provider store={store}>
@@ -34,6 +35,8 @@ function App() {
             <Route path="orders" element={<OrderPage />} />
             <Route path="profile" element={<UserProfile />} />
             <Route path="checkout" element={<CheckoutPage />} />
+            <Route path="orders-tracking" element={<OrderTracking />} />
+            <Route path="purchase-history" element={<PurchaseHistory />} />
           </Route>
         </Routes>
       </Router>
