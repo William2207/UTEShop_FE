@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FcGoogle } from "react-icons/fc";
 //import bgImage from "/public/biaLogin.jpg"; // 📌 import ảnh từ assets
 
-export function LoginPage() {
+function LoginPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error, user } = useSelector((s) => s.auth);
@@ -97,3 +97,5 @@ export function LoginPage() {
     </div>
   );
 }
+
+export default LoginPage;

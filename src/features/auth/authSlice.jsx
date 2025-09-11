@@ -42,6 +42,22 @@ export const verifyReset = createApiThunk(
 // --- Thunk cho luồng Đăng nhập ---
 export const loginUser = createApiThunk("auth/login", "/auth/login");
 
+// Thêm vào cuối file, trước export default
+// Thunk để lấy thông tin user
+export const fetchUserProfile = createAsyncThunk(
+  'auth/fetchProfile',
+  async (_, thunkAPI) => {
+    try {
+      const { data } = await api.get('/auth/me');
+      return data.user;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || 'Không thể tải thông tin người dùng'
+      );
+    }
+  }
+);
+
 // ------------------- Slice Definition -------------------
 
 // 👉 Sử dụng sessionStorage để duy trì trạng thái đăng nhập qua các lần tải lại trang
@@ -138,6 +154,21 @@ const authSlice = createSlice({
         state.message = action.payload.message;
       })
       .addCase(verifyReset.rejected, handleRejected);
+
+    // Cập nhật extraReducers để xử lý fetchUserProfile
+    builder
+      .addCase(fetchUserProfile.pending, (state) => {
+        state.profileLoading = true;
+        state.profileError = null;
+      })
+      .addCase(fetchUserProfile.fulfilled, (state, action) => {
+        state.user = { ...state.user, ...action.payload };
+        state.profileLoading = false;
+      })
+      .addCase(fetchUserProfile.rejected, (state, action) => {
+        state.profileLoading = false;
+        state.profileError = action.payload;
+      });
   },
 });
 
