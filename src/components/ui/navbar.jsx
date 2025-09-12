@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ShoppingBag,
   LogOut,
+  ShoppingBasket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logout } from "../../features/auth/authSlice";
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch } from "react-redux";
 const navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -29,7 +30,6 @@ const navbar = () => {
   const handleLogoClick = () => {
     navigate("/");
   };
-
 
   const handleShopClick = () => {
     navigate("/products");
@@ -52,12 +52,22 @@ const navbar = () => {
     navigate("/");
   };
 
+  const handleMyOrdersClick = () => {
+    navigate("/orders-tracking");
+  };
+
+  const handlePurchaseHistory = () =>{
+    navigate("/purchase-history");
+  }
+
   return (
     <nav className="w-full bg-white border-b border-gray-200 px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <div onClick={handleLogoClick} className="flex-shrink-0 cursor-pointer">
-          <h1 className="text-2xl font-bold text-black hover:text-blue-600 transition-colors">UTE SHOP</h1>
+          <h1 className="text-2xl font-bold text-black hover:text-blue-600 transition-colors">
+            UTE SHOP
+          </h1>
         </div>
 
         {/* Navigation Menu */}
@@ -106,7 +116,7 @@ const navbar = () => {
           <Button variant="ghost" size="icon" className="hover:bg-gray-100">
             <ShoppingCart className="h-5 w-5 text-gray-700" />
           </Button>
-          <Button variant="ghost" size="icon" className="hover:bg-gray-100">
+          <Button variant="ghost" size="icon" className="hover:bg-gray-100" onClick={handlePurchaseHistory}>
             <ShoppingBag className="h-5 w-5 text-gray-700" />
           </Button>
           <DropdownMenu>
@@ -118,16 +128,23 @@ const navbar = () => {
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={handleUserLogoClick}>
                 <User className="mr-2 h-4 w-4" />
-                Profile
+                Trang Cá Nhân
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={handleLogout}
-                className="text-red-600 focus:text-red-600"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
+              <DropdownMenuItem onClick={handleMyOrdersClick}>
+                <ShoppingBasket className="mr-2 h-4 w-4" />
+                Đơn Hàng Của Tôi
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {user ? (
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Đăng Xuất
+                </DropdownMenuItem>
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

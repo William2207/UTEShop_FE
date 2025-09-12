@@ -96,7 +96,6 @@ export function UserProfile() {
   const handleUpdateProfile = async () => {
     setIsUpdating(true); // Báo cho UI biết là đang xử lý
     try {
-      // Gọi API đến endpoint bạn vừa tạo ở backend
       const response = await api.put("/user/profile", formData);
 
       // Cập nhật lại state `userInfo` với dữ liệu mới nhất từ server
