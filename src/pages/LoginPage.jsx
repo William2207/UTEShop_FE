@@ -24,7 +24,7 @@ export function LoginPage() {
   };
 
   useEffect(() => {
-    if (user) navigate("/profile");
+    if (user) navigate("/");
   }, [user, navigate]);
 
   return (
@@ -62,7 +62,6 @@ export function LoginPage() {
           >
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
-
         </form>
 
         <div className="mt-4">
@@ -85,10 +84,7 @@ export function LoginPage() {
             </a>
           </p>
           <p>
-            <a
-              href="/forgot"
-              className="text-indigo-600 hover:underline"
-            >
+            <a href="/forgot" className="text-indigo-600 hover:underline">
               Quên mật khẩu?
             </a>
           </p>
