@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, Store } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -17,6 +17,7 @@ import { formatPrice } from '../utils/formatPrice';
 const CartPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useSelector((state) => state.auth);
   const { items, totalItems, totalAmount, loading, error } = useSelector((state) => state.cart);
   
@@ -102,7 +103,7 @@ const CartPage = () => {
       <div className="container mx-auto px-4 py-8 text-center">
         <ShoppingBag className="h-16 w-16 mx-auto text-gray-400 mb-4" />
         <h2 className="text-2xl font-bold mb-4">Vui lòng đăng nhập để xem giỏ hàng</h2>
-        <Button onClick={() => navigate('/login')}>
+        <Button onClick={() => navigate('/login', { state: { from: location } })}>
           Đăng nhập
         </Button>
       </div>

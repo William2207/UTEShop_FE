@@ -8,8 +8,16 @@ export const fetchCart = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const { data } = await api.get('/cart');
+      
+      console.log('🛒 FetchCart Debug:', {
+        items: data.data.items.length,
+        totalItems: data.data.totalItems,
+        distinctItemCount: data.data.distinctItemCount
+      });
+
       return data.data;
     } catch (error) {
+      console.error('❌ Error fetching cart:', error);
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || 'Không thể tải giỏ hàng'
       );
@@ -22,9 +30,11 @@ export const addToCart = createAsyncThunk(
   async ({ productId, quantity = 1 }, thunkAPI) => {
     try {
       const { data } = await api.post('/cart/add', { productId, quantity });
+      console.log('🛒 AddToCart response:', data); // Debug log
       return {
-        ...data,
-        isNewProduct: data.isNewProduct // Backend sẽ trả về flag này
+        ...data.data, // Backend trả data.data chứa items, totalItems, totalAmount
+        isNewProduct: data.data.isNewProduct,
+        message: data.message
       };
     } catch (error) {
       return thunkAPI.rejectWithValue(
@@ -80,12 +90,70 @@ export const getCartItemCount = createAsyncThunk(
   'cart/getCartItemCount',
   async (_, thunkAPI) => {
     try {
-      const { data } = await api.get('/cart/count');
-      return data.data.totalItems;
+      const { data } = await api.get('/cart');
+      console.log('🛒 CART COUNT DETAILS:', data.data);
+      return {
+        totalItems: data.data.totalItems,
+        distinctItemCount: data.data.distinctItemCount
+      };
     } catch (error) {
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || 'Không thể lấy số lượng giỏ hàng'
       );
+    }
+  }
+);
+
+export const logCartDetails = createAsyncThunk(
+  'cart/logCartDetails',
+  async (_, thunkAPI) => {
+    try {
+      const { data } = await api.get('/cart');
+      console.log('🛒 FULL CART DETAILS:', data.data);
+      return data.data;
+    } catch (error) {
+      console.error('❌ Error logging cart details:', error);
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || 'Không thể lấy chi tiết giỏ hàng'
+      );
+    }
+  }
+);
+
+export const syncCartAcrossPages = createAsyncThunk(
+  'cart/syncCartAcrossPages',
+  async (_, thunkAPI) => {
+    try {
+      const { data } = await api.get('/cart');
+      
+      // Chỉ log khi có dữ liệu thay đổi
+      const state = thunkAPI.getState().cart;
+      const hasChanges = 
+        JSON.stringify(data.data.items) !== JSON.stringify(state.items) ||
+        data.data.totalItems !== state.totalItems ||
+        data.data.totalAmount !== state.totalAmount;
+
+      if (hasChanges) {
+        console.log('🛒 Sync Cart Across Pages:', {
+          items: data.data.items.length,
+          totalItems: data.data.totalItems,
+          totalAmount: data.data.totalAmount
+        });
+      }
+
+      return data.data;
+    } catch (error) {
+      console.error('❌ Error syncing cart:', error);
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || 'Không thể đồng bộ giỏ hàng'
+      );
+    }
+  },
+  {
+    // Chỉ dispatch nếu có sự thay đổi
+    condition: (_, { getState }) => {
+      const state = getState().cart;
+      return state.items.length > 0;
     }
   }
 );
@@ -98,7 +166,6 @@ const initialState = {
   error: null,
   addingToCart: false,
   updatingCart: false,
-  badgeCount: 0, // Luôn đồng bộ với totalItems từ server
 };
 
 const cartSlice = createSlice({
@@ -112,7 +179,6 @@ const cartSlice = createSlice({
       state.items = [];
       state.totalItems = 0;
       state.totalAmount = 0;
-      state.badgeCount = 0;
     },
   },
   extraReducers: (builder) => {
@@ -127,7 +193,6 @@ const cartSlice = createSlice({
         state.items = action.payload.items;
         state.totalItems = action.payload.totalItems;
         state.totalAmount = action.payload.totalAmount;
-        state.badgeCount = action.payload.totalItems; // Luôn đồng bộ
       })
       .addCase(fetchCart.rejected, (state, action) => {
         state.loading = false;
@@ -144,7 +209,6 @@ const cartSlice = createSlice({
         state.items = action.payload.items;
         state.totalItems = action.payload.totalItems;
         state.totalAmount = action.payload.totalAmount;
-        state.badgeCount = action.payload.totalItems; // Luôn đồng bộ
       })
       .addCase(addToCart.rejected, (state, action) => {
         state.addingToCart = false;
@@ -158,10 +222,17 @@ const cartSlice = createSlice({
       })
       .addCase(updateCartItem.fulfilled, (state, action) => {
         state.updatingCart = false;
+        
+        // Luôn cập nhật items và totalItems
         state.items = action.payload.items;
         state.totalItems = action.payload.totalItems;
         state.totalAmount = action.payload.totalAmount;
-        state.badgeCount = action.payload.totalItems; // Luôn đồng bộ
+        
+        console.log('🛒 UpdateCartItem Debug:', {
+          items: state.items,
+          totalItems: state.totalItems,
+          isQuantityUpdate: action.payload.isQuantityUpdate
+        });
       })
       .addCase(updateCartItem.rejected, (state, action) => {
         state.updatingCart = false;
@@ -178,7 +249,6 @@ const cartSlice = createSlice({
         state.items = action.payload.items;
         state.totalItems = action.payload.totalItems;
         state.totalAmount = action.payload.totalAmount;
-        state.badgeCount = action.payload.totalItems; // Luôn đồng bộ
       })
       .addCase(removeFromCart.rejected, (state, action) => {
         state.loading = false;
@@ -192,20 +262,13 @@ const cartSlice = createSlice({
       })
       .addCase(clearCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.items;
-        state.totalItems = action.payload.totalItems;
-        state.totalAmount = action.payload.totalAmount;
-        state.badgeCount = 0; // Luôn đồng bộ
+        state.items = action.payload.items || [];
+        state.totalItems = action.payload.totalItems || 0;
+        state.totalAmount = action.payload.totalAmount || 0;
       })
       .addCase(clearCart.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
-
-      // Get Cart Item Count
-      .addCase(getCartItemCount.fulfilled, (state, action) => {
-        state.totalItems = action.payload;
-        state.badgeCount = action.payload; // Luôn đồng bộ
       })
 
       // Reset cart when user logs out
@@ -217,7 +280,6 @@ const cartSlice = createSlice({
         state.error = null;
         state.addingToCart = false;
         state.updatingCart = false;
-        state.badgeCount = 0;
       });
   },
 });

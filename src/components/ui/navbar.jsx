@@ -17,22 +17,31 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logout } from "../../features/auth/authSlice";
-import { getCartItemCount } from "../../features/cart/cartSlice";
+import { getCartItemCount, logCartDetails } from "../../features/cart/cartSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { useEffect } from "react";
+import { useCartNotifications } from "../../hooks/useCartNotifications";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
-  const { badgeCount } = useSelector((state) => state.cart);
+  const { badgeCount, hasItems } = useCartNotifications();
 
   // Lấy số lượng giỏ hàng khi user đăng nhập
   useEffect(() => {
     if (user) {
       dispatch(getCartItemCount());
+      dispatch(logCartDetails()); // Log chi tiết giỏ hàng
     }
   }, [user, dispatch]);
+
+  // Auto-refresh badge count khi có thay đổi trong cart state
+  useEffect(() => {
+    // Badge count sẽ tự động update từ Redux state
+    console.log('🔢 Badge count updated:', badgeCount);
+    console.log('🔢 User:', user);
+  }, [badgeCount, user]);
 
   const handleLogoClick = () => navigate("/");
   const handleShopClick = () => navigate("/products");
@@ -107,8 +116,10 @@ const Navbar = () => {
             onClick={() => navigate("/cart")}
           >
             <ShoppingCart className="h-5 w-5 text-gray-700" />
-            {user && badgeCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center min-w-[1.25rem]">
+            {user && (
+              <span 
+                className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center min-w-[1.25rem]"
+              >
                 {badgeCount > 99 ? "99+" : badgeCount}
               </span>
             )}

@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { loginUser } from "../features/auth/authSlice";
 import TextField from "../components/ui/TextField";
-import { Button } from "@/components/ui/button";
+import { Button } from "../components/ui/button";
 import { FcGoogle } from "react-icons/fc";
 //import bgImage from "/public/biaLogin.jpg"; // 📌 import ảnh từ assets
 
 function LoginPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { loading, error, user } = useSelector((s) => s.auth);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,8 +25,12 @@ function LoginPage() {
   };
 
   useEffect(() => {
-    if (user) navigate("/dashboard");
-  }, [user, navigate]);
+    if (user) {
+      // Lấy trang trước đó từ location state (nếu được redirect từ PrivateRoute)
+      const from = location.state?.from?.pathname || '/';
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, location]);
 
   return (
     <div

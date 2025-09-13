@@ -1,8 +1,7 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import axios from '../api/axiosConfig';
-import { createOrder } from '../features/order/orderSlice';
 import { addToCart, getCartItemCount } from '../features/cart/cartSlice';
 import { Button } from '../components/ui/button';
 import { formatPrice } from '../utils/formatPrice';
@@ -16,6 +15,7 @@ const toast = {
 export default function ProductDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
     const { addingToCart } = useSelector((state) => state.cart);
@@ -67,18 +67,34 @@ export default function ProductDetailPage() {
         // Kiểm tra đăng nhập
         if (!user) {
             alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
-            navigate('/login');
+            navigate('/login', { state: { from: location } });
             return;
         }
 
         try {
-            await dispatch(addToCart({
+            const result = await dispatch(addToCart({
                 productId: product._id,
                 quantity: quantity
             })).unwrap();
             
-            toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
+            console.log('✅ Đã thêm vào giỏ hàng:', result);
+            
+            // Hiển thị thông báo với logic mới
+            const distinctItemCount = result.distinctItemCount || result.items.length;
+            const totalItems = result.totalItems || 0;
+            const isNewProduct = result.isNewProduct;
+            
+            if (isNewProduct) {
+                toast.success(`Đã thêm sản phẩm mới vào giỏ hàng! (${distinctItemCount} loại sản phẩm)`);
+            } else {
+                toast.success(`Đã tăng số lượng sản phẩm! (${totalItems} sản phẩm)`);
+            }
+            
+            // Auto-refresh cart count để đảm bảo đồng bộ 
+            // (Cart state đã được update bởi addToCart.fulfilled)
+            
         } catch (error) {
+            console.error('❌ Lỗi thêm vào giỏ hàng:', error);
             toast.error(error || "Không thể thêm sản phẩm vào giỏ hàng");
         }
     };
@@ -87,7 +103,7 @@ export default function ProductDetailPage() {
         // Kiểm tra đăng nhập
         if (!user) {
             alert("Vui lòng đăng nhập để thanh toán");
-            navigate('/login');
+            navigate('/login', { state: { from: location } });
             return;
         }
 

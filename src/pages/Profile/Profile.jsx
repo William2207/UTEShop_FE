@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import api from "@/api/axiosConfig"; // dùng một import thống nhất
+import api from "../../api/axiosConfig";
 import { logout } from "../../features/auth/authSlice";
 
 import {
