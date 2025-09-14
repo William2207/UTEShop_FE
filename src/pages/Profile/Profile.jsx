@@ -1,43 +1,26 @@
-// src/pages/UserProfile.jsx
-
-import React, { useEffect, useRef, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-
-import api from "../../api/axiosConfig";
-import { logout } from "../../features/auth/authSlice";
-
+import { useState, useRef } from "react";
+import api from "@/api/axiosConfig";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
-import { Badge } from "../../components/ui/badge";
-import { Separator } from "../../components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "../../components/ui/avatar";
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, MapPin, Edit, Trash2, Plus, Lock } from "lucide-react";
-
-// =============== Component ===============
-const UserProfile = () => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const user = useSelector((state) => state.auth.user);
-
-  // Tabs
+import { useEffect } from "react";
+export function UserProfile() {
   const [activeTab, setActiveTab] = useState("personal");
-
-  // Profile
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Personal form
   const [isUpdating, setIsUpdating] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -45,12 +28,10 @@ const UserProfile = () => {
     phone: "",
     birthDate: "",
   });
-
-  // Avatar
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [addressValue, setAddressValue] = useState("");
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const fileInputRef = useRef(null);
-
-  // Password
+  const fileInputRef = useRef(null); // Tham chiếu đến input ẩn
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -58,133 +39,153 @@ const UserProfile = () => {
   });
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-  // Addresses (giữ đúng ý đồ `addresses.map(...)` trong code gốc)
-  const [addresses, setAddresses] = useState([]);
-  const [editingAddressId, setEditingAddressId] = useState(null); // id hoặc 'new'
-  const [addressDraft, setAddressDraft] = useState({
-    type: "Home",
-    street: "",
-    city: "",
-    isDefault: false,
-  });
-  const [isSavingAddress, setIsSavingAddress] = useState(false);
-
-  // 1) Chưa login thì điều hướng sang /login
+  // Fetch user data from API
   useEffect(() => {
-    if (!user) {
-      navigate("/login");
-    }
-  }, [user, navigate]);
-
-  // 2) Fetch profile + addresses
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchAll = async () => {
-      if (!user) return;
-      setLoading(true);
+    const fetchProfileData = async () => {
       try {
-        const [userRes, addrRes] = await Promise.all([
-          api.get("/user/profile"),
-          api.get("/user/addresses").catch(() => ({ data: [] })), // nếu API chưa có thì không lỗi
+        const [userResponse] = await Promise.all([
+          api.get("/user/profile"), // Dùng instance 'api'
         ]);
 
-        if (!isMounted) return;
-        setUserInfo(userRes.data);
-        setAddresses(Array.isArray(addrRes.data) ? addrRes.data : []);
-        setError(null);
+        setUserInfo(userResponse.data);
       } catch (err) {
-        if (!isMounted) return;
-        console.error("Fetch profile/addresses error:", err);
-        setError(err?.message || "Không thể tải hồ sơ");
+        // Interceptor cũng có thể xử lý lỗi, ví dụ nếu token hết hạn
+        console.error("Lỗi khi fetch profile:", err);
+        setError(err.message);
       } finally {
-        if (isMounted) setLoading(false);
+        setLoading(false);
       }
     };
 
-    fetchAll();
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
-
-  // 3) Đồng bộ form với userInfo
+    fetchProfileData();
+  }, []);
   useEffect(() => {
-    if (!userInfo) return;
+    if (userInfo) {
+      let formattedBirthday = "";
+      // Chỉ định dạng nếu userInfo.birthDate tồn tại
+      if (userInfo.birthDate) {
+        // 1. Tạo một đối tượng Date từ dữ liệu của database
+        const date = new Date(userInfo.birthDate);
+        // 2. Chuyển nó thành chuỗi ISO (YYYY-MM-DDTHH:mm:ss.sssZ)
+        // 3. Cắt chuỗi đó để chỉ lấy phần YYYY-MM-DD
+        formattedBirthday = date.toISOString().split("T")[0];
+      }
 
-    let birth = "";
-    if (userInfo.birthDate) {
-      const d = new Date(userInfo.birthDate);
-      if (!Number.isNaN(d.getTime())) birth = d.toISOString().split("T")[0];
+      setFormData({
+        name: userInfo.name || "",
+        email: userInfo.email || "",
+        phone: userInfo.phone || "",
+        birthDate: formattedBirthday,
+      });
+      setAddressValue(userInfo.address || "");
     }
+  }, [userInfo]); // useEffect này sẽ chạy mỗi khi `userInfo` thay đổi
 
-    setFormData({
-      name: userInfo.name || "",
-      email: userInfo.email || "",
-      phone: userInfo.phone || "",
-      birthDate: birth,
-    });
-  }, [userInfo]);
-
-  // =============== Handlers ===============
-
-  // Personal info
+  //Handle input change
   const handleInputChange = (e) => {
     const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      [id]: value,
+    }));
   };
-
+  //Handle update profile
   const handleUpdateProfile = async () => {
-    setIsUpdating(true);
+    setIsUpdating(true); // Báo cho UI biết là đang xử lý
     try {
-      const res = await api.put("/user/profile", { ...formData });
-      setUserInfo(res.data);
+      const response = await api.put("/user/profile", formData);
+
+      // Cập nhật lại state `userInfo` với dữ liệu mới nhất từ server
+      setUserInfo(response.data);
+
+      // Thông báo thành công
       alert("Cập nhật thông tin thành công!");
     } catch (err) {
-      console.error("Update profile error:", err);
-      alert(err?.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại.");
+      console.error("Lỗi khi cập nhật profile:", err);
+      // Hiển thị thông báo lỗi cho người dùng
+      alert(err.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại.");
+    } finally {
+      setIsUpdating(false); // Dù thành công hay thất bại, cũng dừng trạng thái "đang lưu"
+    }
+  };
+
+  //Handle edit Address click
+  const handleEditAddressClick = () => {
+    setIsEditingAddress(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingAddress(false);
+    // Reset lại giá trị input về giá trị gốc từ userInfo
+    setAddressValue(userInfo?.address || "");
+  };
+
+  //Handle save Address
+  const handleSaveAddress = async () => {
+    setIsUpdating(true);
+
+    // Payload chỉ chứa trường address
+    const payload = { address: addressValue };
+
+    try {
+      const response = await api.put("/user/profile", payload);
+      setUserInfo(response.data); // Cập nhật lại toàn bộ userInfo
+      setIsEditingAddress(false); // Quay lại chế độ hiển thị
+      alert("Cập nhật địa chỉ thành công!");
+    } catch (err) {
+      console.error("Lỗi khi cập nhật địa chỉ:", err);
+      alert("Cập nhật địa chỉ thất bại.");
     } finally {
       setIsUpdating(false);
     }
   };
 
-  // Avatar
+  // Khi người dùng click vào avatar
   const handleAvatarClick = () => {
-    if (!isUploadingAvatar) fileInputRef.current?.click();
+    // Không cho click khi đang upload
+    if (isUploadingAvatar) return;
+    fileInputRef.current.click();
   };
-
+  // Sau khi người dùng chọn file
   const handleFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files[0];
+    if (!file) {
+      return; // Người dùng bấm cancel
+    }
 
-    setIsUploadingAvatar(true);
-    const fd = new FormData();
-    fd.append("avatar", file);
+    setIsUploadingAvatar(true); // Bắt đầu upload, báo cho UI biết
+
+    const formData = new FormData();
+    formData.append("avatar", file);
 
     try {
-      const res = await api.post("/user/avatar", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
+      // Gọi API ngay lập tức
+      const response = await api.post("/user/avatar", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
-      setUserInfo(res.data);
+
+      // Cập nhật UI với dữ liệu mới từ server
+      setUserInfo(response.data);
       alert("Cập nhật avatar thành công!");
     } catch (err) {
-      console.error("Upload avatar error:", err);
-      alert(err?.response?.data?.message || "Upload avatar thất bại.");
+      console.error("Lỗi khi upload avatar:", err);
+      alert("Upload avatar thất bại. Vui lòng thử lại.");
     } finally {
-      setIsUploadingAvatar(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      setIsUploadingAvatar(false); // Kết thúc upload
     }
   };
 
-  // Password
   const handlePasswordInputChange = (e) => {
     const { id, value } = e.target;
     setPasswordForm((prev) => ({ ...prev, [id]: value }));
   };
 
   const handleChangePassword = async () => {
+    // 1. Kiểm tra ở phía client trước
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert("Mật khẩu mới không khớp.");
+      alert("Mật khẩu mới không khớp. Vui lòng nhập lại.");
       return;
     }
     if (passwordForm.newPassword.length < 6) {
@@ -193,99 +194,28 @@ const UserProfile = () => {
     }
 
     setIsUpdatingPassword(true);
+
+    // 2. Chỉ gửi những dữ liệu cần thiết đến backend
+    const payload = {
+      currentPassword: passwordForm.currentPassword,
+      newPassword: passwordForm.newPassword,
+    };
+
     try {
-      const res = await api.put("/user/password", {
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
+      const response = await api.put("/user/password", payload);
+      alert(response.data.message); // Hiển thị thông báo thành công từ server
+      // Xóa sạch các trường input sau khi thành công
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
       });
-      alert(res.data?.message || "Đổi mật khẩu thành công.");
-      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (err) {
-      alert(err?.response?.data?.message || "Đã có lỗi xảy ra.");
+      alert(err.response?.data?.message || "Đã có lỗi xảy ra.");
     } finally {
       setIsUpdatingPassword(false);
     }
   };
-
-  // Addresses
-  const startAddAddress = () => {
-    setEditingAddressId("new");
-    setAddressDraft({ type: "Home", street: "", city: "", isDefault: false });
-  };
-
-  const startEditAddress = (addr) => {
-    setEditingAddressId(addr.id);
-    setAddressDraft({
-      type: addr.type || "Home",
-      street: addr.street || addr.address || "", // phòng khi backend trả key khác
-      city: addr.city || "",
-      isDefault: !!addr.isDefault,
-    });
-  };
-
-  const cancelEditAddress = () => {
-    setEditingAddressId(null);
-    setAddressDraft({ type: "Home", street: "", city: "", isDefault: false });
-  };
-
-  const saveAddress = async () => {
-    setIsSavingAddress(true);
-    try {
-      if (editingAddressId === "new") {
-        const res = await api.post("/user/addresses", addressDraft);
-        setAddresses((prev) => [res.data, ...prev]);
-      } else {
-        const res = await api.put(`/user/addresses/${editingAddressId}`, addressDraft);
-        setAddresses((prev) =>
-          prev.map((a) => (a.id === editingAddressId ? res.data : a))
-        );
-      }
-      cancelEditAddress();
-    } catch (err) {
-      console.error("Save address error:", err);
-      alert(err?.response?.data?.message || "Lưu địa chỉ thất bại.");
-    } finally {
-      setIsSavingAddress(false);
-    }
-  };
-
-  const deleteAddress = async (id) => {
-    if (!confirm("Xóa địa chỉ này?")) return;
-    try {
-      await api.delete(`/user/addresses/${id}`);
-      setAddresses((prev) => prev.filter((a) => a.id !== id));
-    } catch (err) {
-      console.error("Delete address error:", err);
-      alert(err?.response?.data?.message || "Xóa địa chỉ thất bại.");
-    }
-  };
-
-  const setDefaultAddress = async (id) => {
-    try {
-      const res = await api.put(`/user/addresses/${id}/default`);
-      // Giả sử API trả về danh sách mới hoặc object vừa set default:
-      // Ở đây cập nhật local: đặt isDefault cho id và tắt ở các item khác
-      setAddresses((prev) =>
-        prev.map((a) => ({ ...a, isDefault: a.id === id }))
-      );
-      alert(res.data?.message || "Đã đặt địa chỉ mặc định.");
-    } catch (err) {
-      console.error("Set default error:", err);
-      alert(err?.response?.data?.message || "Không thể đặt mặc định.");
-    }
-  };
-
-  // Logout
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate("/");
-  };
-
-  // =============== Render ===============
-  if (!user) return null;
-  if (loading) return <div>Đang tải...</div>;
-  if (error) return <div>Lỗi: {error}</div>;
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Header */}
@@ -296,32 +226,38 @@ const UserProfile = () => {
         >
           Trang cá nhân
         </h1>
-        <p className="text-muted-foreground text-lg">S'habiller est un mode de vie.</p>
+        <p className="text-muted-foreground text-lg">
+          S'habiller est un mode de vie.
+        </p>
       </div>
 
-      {/* Profile Overview */}
+      {/* Profile Overview Card */}
       <Card className="mb-8">
         <CardContent className="pt-6">
           <div className="flex items-center gap-4">
+            {/* === PHẦN AVATAR ĐƠN GIẢN HÓA === */}
             <div className="relative">
               <Avatar
                 className={`h-20 w-20 ${
-                  isUploadingAvatar ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                  isUploadingAvatar
+                    ? "opacity-50 cursor-not-allowed"
+                    : "cursor-pointer"
                 }`}
                 onClick={handleAvatarClick}
               >
                 <AvatarImage
+                  // Chỉ cần hiển thị avatar từ DB hoặc ảnh mặc định
                   src={userInfo?.avatarUrl || "/placeholder.svg"}
-                  alt={userInfo?.name || "avatar"}
+                  alt={userInfo?.name}
                 />
                 <AvatarFallback className="text-lg">
-                  {(userInfo?.name || "U").toString().slice(0, 2).toUpperCase()}
+                  {userInfo?.name?.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-
+              {/* (Tùy chọn) Thêm một spinner khi đang upload */}
               {isUploadingAvatar && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/25 rounded-full">
-                  <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-25 rounded-full">
+                  <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
                 </div>
               )}
 
@@ -331,28 +267,31 @@ const UserProfile = () => {
                 hidden
                 accept="image/png, image/jpeg"
                 onChange={handleFileChange}
+                // Reset value để người dùng có thể chọn lại cùng 1 file
+                onClick={(e) => (e.target.value = null)}
               />
             </div>
 
             <div>
-              <h2 className="text-2xl font-semibold text-foreground">{userInfo?.name}</h2>
+              <h2 className="text-2xl font-semibold text-foreground">
+                {userInfo?.name}
+              </h2>
               <p className="text-muted-foreground">{userInfo?.email}</p>
+              {/* Badge bây giờ sẽ luôn hiển thị */}
               <Badge variant="secondary" className="mt-2">
                 Premium Member
               </Badge>
-            </div>
-
-            <div className="ml-auto">
-              <Button variant="outline" onClick={handleLogout}>
-                Đăng xuất
-              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="personal" className="flex items-center gap-2">
             <User className="h-4 w-4" />
@@ -368,18 +307,24 @@ const UserProfile = () => {
           </TabsTrigger>
         </TabsList>
 
-        {/* Personal Info */}
+        {/* Personal Info Tab */}
         <TabsContent value="personal">
           <Card>
             <CardHeader>
               <CardTitle>Thông Tin Cá Nhân</CardTitle>
-              <CardDescription>Thay đổi thông tin cá nhân của bạn</CardDescription>
+              <CardDescription>
+                Thay đổi thông tin cá nhân của bạn
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Họ Tên</Label>
-                  <Input id="name" value={formData.name} onChange={handleInputChange} />
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
@@ -392,263 +337,203 @@ const UserProfile = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Số Điện Thoại</Label>
-                  <Input id="phone" value={formData.phone} onChange={handleInputChange} />
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="birthDate">Ngày sinh</Label>
+                  <Label htmlFor="birthDate">Ngày Sinh Nhật</Label>
                   <Input
                     id="birthDate"
                     type="date"
+                    name="birthDate"
                     value={formData.birthDate}
-                    onChange={handleInputChange}
+                    onChange={(e) =>
+                      setFormData({ ...formData, birthDate: e.target.value })
+                    }
                   />
                 </div>
               </div>
               <Separator />
               <div className="flex gap-2">
-                <Button onClick={handleUpdateProfile} disabled={isUpdating}>
+                <Button
+                  className="bg-primary hover:bg-primary/90"
+                  disabled={isUpdating}
+                  onClick={handleUpdateProfile}
+                >
                   {isUpdating ? "Đang lưu..." : "Lưu Thay Đổi"}
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    // khôi phục theo userInfo
-                    let birth = "";
-                    if (userInfo?.birthDate) {
-                      const d = new Date(userInfo.birthDate);
-                      if (!Number.isNaN(d.getTime())) {
-                        birth = d.toISOString().split("T")[0];
-                      }
-                    }
-                    setFormData({
-                      name: userInfo?.name || "",
-                      email: userInfo?.email || "",
-                      phone: userInfo?.phone || "",
-                      birthDate: birth,
-                    });
-                  }}
-                >
-                  Hủy
-                </Button>
+                <Button variant="outline">Hủy</Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Password */}
         <TabsContent value="password">
           <Card>
             <CardHeader>
               <CardTitle>Đổi Mật Khẩu</CardTitle>
-              <CardDescription>Đảm bảo tài khoản của bạn được bảo mật</CardDescription>
+              <CardDescription>
+                Đảm bảo tài khoản của bạn được bảo mật
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Mật Khẩu Hiện Tại</Label>
+                  <Label htmlFor="current-password">Mật Khẩu Hiện Tại</Label>
                   <Input
                     id="currentPassword"
                     type="password"
+                    placeholder="Enter your current password"
                     value={passwordForm.currentPassword}
                     onChange={handlePasswordInputChange}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">Mật Khẩu Mới</Label>
+                  <Label htmlFor="new-password">Mật Khẩu Mới</Label>
                   <Input
                     id="newPassword"
                     type="password"
+                    placeholder="Enter your new password"
                     value={passwordForm.newPassword}
                     onChange={handlePasswordInputChange}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Nhập Lại Mật Khẩu Mới</Label>
+                  <Label htmlFor="confirm-password">
+                    Nhập Lại Mật Khẩu Mới
+                  </Label>
                   <Input
                     id="confirmPassword"
                     type="password"
+                    placeholder="Confirm your new password"
                     value={passwordForm.confirmPassword}
                     onChange={handlePasswordInputChange}
                   />
                 </div>
               </div>
-
               <div className="bg-muted p-4 rounded-lg">
                 <h4 className="font-medium mb-2">Yêu Cầu:</h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   <li>• Nhiều hơn 8 ký tự</li>
-                  <li>• Ít nhất 1 ký tự in hoa</li>
-                  <li>• Ít nhất 1 chữ số</li>
-                  <li>• Ít nhất 1 ký tự đặc biệt</li>
+                  <li>• Bao gồm ít nhất 1 ký tự in hoa</li>
+                  <li>• Bao gồm ít nhất 1 chữ số</li>
+                  <li>• Bao gồm ít nhất 1 ký tự đặc biệt</li>
                 </ul>
               </div>
               <Separator />
               <div className="flex gap-2">
-                <Button onClick={handleChangePassword} disabled={isUpdatingPassword}>
+                <Button
+                  onClick={handleChangePassword}
+                  disabled={isUpdatingPassword}
+                  className="bg-primary hover:bg-primary/90"
+                >
                   {isUpdatingPassword ? "Đang lưu..." : "Lưu"}
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" })
-                  }
-                >
-                  Hủy
-                </Button>
+                <Button variant="outline">Hủy</Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Addresses */}
+        {/* Addresses Tab */}
         <TabsContent value="addresses">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Địa Chỉ</CardTitle>
-                <CardDescription>Thay đổi địa chỉ nhận hàng của bạn</CardDescription>
+                <CardDescription>
+                  Thay đổi địa chỉ nhận hàng của bạn
+                </CardDescription>
               </div>
-              {editingAddressId === null && (
-                <Button onClick={startAddAddress}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Thêm Địa Chỉ
-                </Button>
-              )}
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {/* Form thêm/sửa */}
-                {editingAddressId !== null && (
-                  <div className="p-4 border rounded-lg space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="addr-type">Loại</Label>
-                        <Input
-                          id="addr-type"
-                          value={addressDraft.type}
-                          onChange={(e) =>
-                            setAddressDraft((prev) => ({ ...prev, type: e.target.value }))
-                          }
-                          placeholder="Home / Office ..."
-                        />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="addr-street">Địa chỉ</Label>
-                        <Input
-                          id="addr-street"
-                          value={addressDraft.street}
-                          onChange={(e) =>
-                            setAddressDraft((prev) => ({ ...prev, street: e.target.value }))
-                          }
-                          placeholder="Số nhà, đường..."
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="addr-city">Thành phố</Label>
-                        <Input
-                          id="addr-city"
-                          value={addressDraft.city}
-                          onChange={(e) =>
-                            setAddressDraft((prev) => ({ ...prev, city: e.target.value }))
-                          }
-                          placeholder="TP. HCM, Hà Nội..."
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Mặc định</Label>
-                        <Button
-                          type="button"
-                          variant={addressDraft.isDefault ? "default" : "outline"}
-                          onClick={() =>
-                            setAddressDraft((prev) => ({ ...prev, isDefault: !prev.isDefault }))
-                          }
-                        >
-                          {addressDraft.isDefault ? "Đang là mặc định" : "Đặt làm mặc định"}
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button onClick={saveAddress} disabled={isSavingAddress}>
-                        {isSavingAddress ? "Đang lưu..." : "Lưu"}
-                      </Button>
-                      <Button variant="outline" onClick={cancelEditAddress}>
-                        Hủy
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Danh sách địa chỉ */}
-                {addresses.length > 0 ? (
-                  addresses.map((address) => (
-                    <div
-                      key={address.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold">{address.type || "Home"}</p>
-                            {address.isDefault && (
-                              <Badge variant="secondary">Default</Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {address.street || address.address}
-                          </p>
-                          <p className="text-sm text-muted-foreground">{address.city}</p>
-                        </div>
-                      </div>
+              {userInfo?.address ? (
+                // ---- TRƯỜNG HỢP 1: NGƯỜI DÙNG ĐÃ CÓ ĐỊA CHỈ ----
+                <div>
+                  {isEditingAddress ? (
+                    // Chế độ CHỈNH SỬA
+                    <div className="space-y-4">
+                      <Label htmlFor="address-input">Địa chỉ</Label>
+                      <Input
+                        id="address-input"
+                        value={addressValue}
+                        onChange={(e) => setAddressValue(e.target.value)}
+                        placeholder="Nhập địa chỉ của bạn"
+                      />
                       <div className="flex gap-2">
-                        {!address.isDefault && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setDefaultAddress(address.id)}
-                            title="Đặt làm mặc định"
-                          >
-                            Mặc định
-                          </Button>
-                        )}
                         <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => startEditAddress(address)}
-                          title="Sửa"
+                          onClick={handleSaveAddress}
+                          disabled={isUpdating}
                         >
-                          <Edit className="h-4 w-4" />
+                          {isUpdating ? "Đang lưu..." : "Lưu"}
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => deleteAddress(address.id)}
-                          title="Xóa"
-                        >
-                          <Trash2 className="h-4 w-4" />
+                        <Button variant="outline" onClick={handleCancelEdit}>
+                          Hủy
                         </Button>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  editingAddressId === null && (
+                  ) : (
+                    // Chế độ HIỂN THỊ
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        {userInfo.address}
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleEditAddressClick}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // ---- TRƯỜỢNG HỢP 2: NGƯỜI DÙNG CHƯA CÓ ĐỊA CHỈ ----
+                <div>
+                  {isEditingAddress ? (
+                    // Chế độ THÊM MỚI (giao diện giống hệt chỉnh sửa)
+                    <div className="space-y-4">
+                      <Label htmlFor="address-input">Địa chỉ</Label>
+                      <Input
+                        id="address-input"
+                        value={addressValue}
+                        onChange={(e) => setAddressValue(e.target.value)}
+                        placeholder="Nhập địa chỉ của bạn"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleSaveAddress}
+                          disabled={isUpdating}
+                        >
+                          {isUpdating ? "Đang lưu..." : "Lưu"}
+                        </Button>
+                        <Button variant="outline" onClick={handleCancelEdit}>
+                          Hủy
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    // Giao diện "trạng thái trống"
                     <div className="text-center py-8 px-4 border-2 border-dashed rounded-lg">
                       <p className="text-muted-foreground mb-4">
                         Bạn chưa có địa chỉ nào được lưu.
                       </p>
-                      <Button onClick={startAddAddress}>
+                      <Button onClick={handleEditAddressClick}>
                         <Plus className="h-4 w-4 mr-2" />
                         Thêm địa chỉ mới
                       </Button>
                     </div>
-                  )
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
     </div>
   );
-};
-
-export default UserProfile;
+}

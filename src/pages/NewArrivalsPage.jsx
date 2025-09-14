@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "../api/axiosConfig";
 import { formatPrice } from '../utils/formatPrice';
 
+
 const NewArrivalsPage = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);

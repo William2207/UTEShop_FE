@@ -142,13 +142,13 @@ const OrderPage = () => {
                                                             {item.product?.name || 'Sản phẩm'}
                                                         </p>
                                                         <p className="text-sm text-gray-500">
-                                                            Số lượng: {item.quantity} | Giá: {item.price?.toLocaleString()} đ
+                                                            Số lượng: {item.quantity} | Giá: {item.price?.toLocaleString()}₫
                                                         </p>
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="font-medium text-gray-800">
-                                                        {((item.price || 0) * (item.quantity || 0)).toLocaleString()} đ
+                                                        {((item.price || 0) * (item.quantity || 0)).toLocaleString()}₫
                                                     </p>
                                                 </div>
                                             </div>
@@ -173,7 +173,7 @@ const OrderPage = () => {
                                 {/* Order Footer */}
                                 <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                                     <div className="text-lg font-bold text-gray-800">
-                                        Tổng cộng: {order.totalPrice?.toLocaleString()} đ
+                                        Tổng cộng: {order.totalPrice?.toLocaleString()}₫
                                     </div>
                                     <div className="flex space-x-2">
                                         <Button

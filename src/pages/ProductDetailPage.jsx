@@ -15,10 +15,12 @@ const toast = {
 export default function ProductDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+
     const location = useLocation();
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
     const { addingToCart } = useSelector((state) => state.cart);
+
 
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -63,6 +65,7 @@ export default function ProductDetailPage() {
         }
     };
 
+
     const handleAddToCart = async () => {
         // Kiểm tra đăng nhập
         if (!user) {
@@ -97,13 +100,16 @@ export default function ProductDetailPage() {
             console.error('❌ Lỗi thêm vào giỏ hàng:', error);
             toast.error(error || "Không thể thêm sản phẩm vào giỏ hàng");
         }
+
     };
 
     const handleCODPayment = () => {
         // Kiểm tra đăng nhập
         if (!user) {
             alert("Vui lòng đăng nhập để thanh toán");
+
             navigate('/login', { state: { from: location } });
+
             return;
         }
 
@@ -202,12 +208,16 @@ export default function ProductDetailPage() {
                     <div className="space-y-2">
                         <div className="flex items-center gap-3">
                             <span className="text-3xl font-bold text-red-600">
-                                {formatPrice(discountedPrice)}
+
+                                {discountedPrice.toLocaleString()}₫
+
                             </span>
                             {product.discountPercentage > 0 && (
                                 <>
                                     <span className="text-xl text-gray-500 line-through">
-                                        {formatPrice(originalPrice)}
+
+                                        {originalPrice.toLocaleString()}₫
+
                                     </span>
                                     <span className="bg-red-500 text-white text-sm font-bold px-2 py-1 rounded-full">
                                         -{product.discountPercentage}%

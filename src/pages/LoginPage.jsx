@@ -32,6 +32,7 @@ function LoginPage() {
     }
   }, [user, navigate, location]);
 
+
   return (
     <div
       className="min-h-screen flex items-center justify-center bg-cover bg-center relative"
@@ -67,7 +68,6 @@ function LoginPage() {
           >
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
-
         </form>
 
         <div className="mt-4">
@@ -90,10 +90,7 @@ function LoginPage() {
             </a>
           </p>
           <p>
-            <a
-              href="/forgot"
-              className="text-indigo-600 hover:underline"
-            >
+            <a href="/forgot" className="text-indigo-600 hover:underline">
               Quên mật khẩu?
             </a>
           </p>

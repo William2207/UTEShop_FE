@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 // Chọn một instance axios để sử dụng nhất quán
-import api from "../../api/axiosConfig"; 
+import api from "../../api/axiosConfig";
 
 // ------------------- Async Thunks -------------------
 
