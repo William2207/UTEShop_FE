@@ -11,7 +11,7 @@ import RegisterPage from './pages/Register';
 import ProductListPage from './pages/ProductListPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import ForgotPassword from './pages/ForgotPassword';
-import UserProfile from './pages/Profile/Profile';
+import { UserProfile } from './pages/Profile/Profile';
 import CartPage from './pages/CartPage';
 import NewArrivalsPage from './pages/NewArrivalsPage';
 import OrderPage from './pages/OrderPage';
@@ -26,15 +26,15 @@ import { OrderTracking } from './pages/Profile/orderTracking';
 import { PurchaseHistory } from './pages/Profile/purchaseHistory';
 
 import PrivateRoute from './components/utils/PrivateRoute';
-import { ErrorBoundary } from './components/ErrorBoundary';
+
 
 function App() {
   return (
     <Provider store={store}>
       <Router>
         <Routes>
-          <Route 
-            path="/" 
+          <Route
+            path="/"
             element={<MainLayout />}
             errorElement={<ErrorBoundary />}
           >
@@ -55,15 +55,15 @@ function App() {
             <Route path="orders" element={<OrderPage />} />
             <Route path="orders-tracking" element={<OrderTracking />} />
             <Route path="purchase-history" element={<PurchaseHistory />} />
-            
+
             {/* Route Profile được bảo vệ - chỉ đăng nhập mới vào được */}
-            <Route 
-              path="profile" 
+            <Route
+              path="profile"
               element={
                 <PrivateRoute>
                   <UserProfile />
                 </PrivateRoute>
-              } 
+              }
             />
           </Route>
         </Routes>
