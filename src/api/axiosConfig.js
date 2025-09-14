@@ -11,6 +11,9 @@ api.interceptors.request.use(
     // Lấy token từ sessionStorage
     const token = sessionStorage.getItem("token");
 
+    // Dòng console.log này hữu ích cho việc debug, được giữ lại từ nhánh dev_hau1
+    console.log('🔍 Request interceptor - Token:', token ? 'Token exists' : 'No token');
+
     // Nếu token tồn tại, thêm nó vào header Authorization
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
@@ -24,25 +27,35 @@ api.interceptors.request.use(
   }
 );
 
-// Thêm response interceptor để xử lý lỗi auth
+// Thêm response interceptor để xử lý lỗi xác thực (authentication)
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   (error) => {
-    // Nếu nhận 401 và có code liên quan đến auth, clear session và redirect
+    // Log lỗi ra console để dễ debug
+    console.log('🔍 Response interceptor - Error:', error.response?.data);
+    
+    // Nếu nhận được lỗi 401 (Unauthorized)
     if (error.response?.status === 401) {
       const errorCode = error.response?.data?.code;
-      if (['TOKEN_EXPIRED', 'INVALID_TOKEN', 'NO_TOKEN'].includes(errorCode)) {
-        // Clear session storage
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('refreshToken');
-        sessionStorage.removeItem('user');
 
-        // Redirect to login page
+      // Kiểm tra xem mã lỗi có phải là lỗi liên quan đến token hay không
+      if (['TOKEN_EXPIRED', 'INVALID_TOKEN', 'NO_TOKEN'].includes(errorCode)) {
+        
+        // Xóa toàn bộ thông tin người dùng khỏi sessionStorage
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('refreshToken');
+        
+        // Chuyển hướng người dùng về trang đăng nhập
+        // Chỉ chuyển hướng nếu họ không ở sẵn trang đăng nhập để tránh vòng lặp
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
         }
       }
     }
+    
     return Promise.reject(error);
   }
 );
