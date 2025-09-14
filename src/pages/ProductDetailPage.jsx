@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import axios from '../api/axiosConfig';
-import { createOrder } from '../features/order/orderSlice';
+import { addToCart, getCartItemCount } from '../features/cart/cartSlice';
 import { Button } from '../components/ui/button';
+import { formatPrice } from '../utils/formatPrice';
 
 // Tạm thời mock toast nếu chưa có
 const toast = {
@@ -14,8 +15,12 @@ const toast = {
 export default function ProductDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+
+    const location = useLocation();
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
+    const { addingToCart } = useSelector((state) => state.cart);
+
 
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -60,16 +65,51 @@ export default function ProductDetailPage() {
         }
     };
 
-    const handleAddToCart = () => {
-        // TODO: Implement add to cart functionality
-        alert(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
+
+    const handleAddToCart = async () => {
+        // Kiểm tra đăng nhập
+        if (!user) {
+            alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
+            navigate('/login', { state: { from: location } });
+            return;
+        }
+
+        try {
+            const result = await dispatch(addToCart({
+                productId: product._id,
+                quantity: quantity
+            })).unwrap();
+            
+            console.log('✅ Đã thêm vào giỏ hàng:', result);
+            
+            // Hiển thị thông báo với logic mới
+            const distinctItemCount = result.distinctItemCount || result.items.length;
+            const totalItems = result.totalItems || 0;
+            const isNewProduct = result.isNewProduct;
+            
+            if (isNewProduct) {
+                toast.success(`Đã thêm sản phẩm mới vào giỏ hàng! (${distinctItemCount} loại sản phẩm)`);
+            } else {
+                toast.success(`Đã tăng số lượng sản phẩm! (${totalItems} sản phẩm)`);
+            }
+            
+            // Auto-refresh cart count để đảm bảo đồng bộ 
+            // (Cart state đã được update bởi addToCart.fulfilled)
+            
+        } catch (error) {
+            console.error('❌ Lỗi thêm vào giỏ hàng:', error);
+            toast.error(error || "Không thể thêm sản phẩm vào giỏ hàng");
+        }
+
     };
 
     const handleCODPayment = () => {
         // Kiểm tra đăng nhập
         if (!user) {
             alert("Vui lòng đăng nhập để thanh toán");
-            navigate('/login');
+
+            navigate('/login', { state: { from: location } });
+
             return;
         }
 
@@ -168,12 +208,16 @@ export default function ProductDetailPage() {
                     <div className="space-y-2">
                         <div className="flex items-center gap-3">
                             <span className="text-3xl font-bold text-red-600">
+
                                 {discountedPrice.toLocaleString()}₫
+
                             </span>
                             {product.discountPercentage > 0 && (
                                 <>
                                     <span className="text-xl text-gray-500 line-through">
+
                                         {originalPrice.toLocaleString()}₫
+
                                     </span>
                                     <span className="bg-red-500 text-white text-sm font-bold px-2 py-1 rounded-full">
                                         -{product.discountPercentage}%
@@ -249,9 +293,10 @@ export default function ProductDetailPage() {
 
                             <button
                                 onClick={handleAddToCart}
-                                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                                disabled={addingToCart}
+                                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Thêm vào giỏ hàng
+                                {addingToCart ? "Đang thêm..." : "Thêm vào giỏ hàng"}
                             </button>
 
                             <button

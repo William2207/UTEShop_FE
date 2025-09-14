@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/axiosConfig";
+import { formatPrice } from '../utils/formatPrice';
+
 
 const NewArrivalsPage = () => {
     const [products, setProducts] = useState([]);
@@ -129,11 +131,11 @@ const ProductCard = ({ product, onClick }) => {
                 {/* Price */}
                 <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg font-bold text-red-600">
-                        {discountedPrice.toLocaleString()}₫
+                        {formatPrice(discountedPrice)}
                     </span>
                     {product.discountPercentage > 0 && (
                         <span className="text-sm text-gray-500 line-through">
-                            {originalPrice.toLocaleString()}₫
+                            {formatPrice(originalPrice)}
                         </span>
                     )}
                 </div>

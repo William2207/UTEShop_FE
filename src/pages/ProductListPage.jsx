@@ -2,6 +2,11 @@ import React, { useEffect, useState } from "react";
 import axios from "../api/axiosConfig";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
+import { useDispatch, useSelector } from 'react-redux';
+import { ShoppingCart } from 'lucide-react';
+import { addToCart, getCartItemCount } from '../features/cart/cartSlice';
+import { formatPrice } from '../utils/formatPrice';
+
 export default function ProductListPage() {
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -253,9 +258,35 @@ export default function ProductListPage() {
 
 // ================= ProductCard =================
 function ProductCard({ product, navigate }) {
+
+    const dispatch = useDispatch();
+    const { user } = useSelector((state) => state.auth);
+    const { addingToCart } = useSelector((state) => state.cart);
+
     const handleClick = () => {
         // Chỉ navigate, view count sẽ được tăng trong ProductDetailPage
         navigate(`/products/${product._id}`);
+    };
+
+    const handleAddToCart = async (e) => {
+        e.stopPropagation();
+        
+        if (!user) {
+            alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
+            navigate('/login');
+            return;
+        }
+
+        try {
+            await dispatch(addToCart({
+                productId: product._id,
+                quantity: 1
+            })).unwrap();
+            
+            alert(`Đã thêm sản phẩm vào giỏ hàng!`);
+        } catch (error) {
+            alert(error || "Không thể thêm sản phẩm vào giỏ hàng");
+        }
     };
 
     const originalPrice = product.price;
@@ -316,7 +347,9 @@ function ProductCard({ product, navigate }) {
                 </div>
 
                 {/* Stock Status */}
-                <div className="mt-2">
+
+                <div className="mt-2 mb-3">
+
                     {product.stock > 0 ? (
                         <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
                             Còn {product.stock} sản phẩm
@@ -327,6 +360,19 @@ function ProductCard({ product, navigate }) {
                         </span>
                     )}
                 </div>
+
+                {/* Add to Cart Button */}
+                {product.stock > 0 && (
+                    <button
+                        onClick={handleAddToCart}
+                        disabled={addingToCart}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <ShoppingCart className="h-4 w-4" />
+                        {addingToCart ? "Đang thêm..." : "Thêm vào giỏ hàng"}
+                    </button>
+                )}
+
             </div>
         </div>
     );
