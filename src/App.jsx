@@ -13,6 +13,9 @@ import NewArrivalsPage from './pages/NewArrivalsPage';
 import OrderPage from './pages/OrderPage';
 import { UserProfile } from './pages/Profile/Profile';
 import CheckoutPage from './pages/CheckoutPage';
+import PaymentTestPage from './pages/PaymentTestPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import PaymentFailurePage from './pages/PaymentFailurePage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { OrderTracking } from './pages/Profile/orderTracking';
 import { PurchaseHistory } from './pages/Profile/purchaseHistory';
@@ -35,6 +38,9 @@ function App() {
             <Route path="orders" element={<OrderPage />} />
             <Route path="profile" element={<UserProfile />} />
             <Route path="checkout" element={<CheckoutPage />} />
+            <Route path="payment-test" element={<PaymentTestPage />} />
+            <Route path="payment/success" element={<PaymentSuccessPage />} />
+            <Route path="payment/failure" element={<PaymentFailurePage />} />
             <Route path="orders-tracking" element={<OrderTracking />} />
             <Route path="purchase-history" element={<PurchaseHistory />} />
           </Route>
