@@ -1,10 +1,15 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import axios from '../api/axiosConfig';
 import { addToCart, getCartItemCount } from '../features/cart/cartSlice';
+import { addViewedProductAsync } from '../features/viewedProducts/viewedProductSlice';
 import { Button } from '../components/ui/button';
 import { formatPrice } from '../utils/formatPrice';
+import FavoriteButton from '../components/FavoriteButton';
+import ProductStats from '../components/ProductStats';
+import SimilarProducts from '../components/SimilarProducts';
+import ReviewSection from '../components/ReviewSection';
 
 // Tạm thời mock toast nếu chưa có
 const toast = {
@@ -15,8 +20,8 @@ const toast = {
 export default function ProductDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-
     const location = useLocation();
+    const [searchParams] = useSearchParams();
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
     const { addingToCart } = useSelector((state) => state.cart);
@@ -27,6 +32,7 @@ export default function ProductDetailPage() {
     const [error, setError] = useState(null);
     const [selectedImage, setSelectedImage] = useState(0);
     const [quantity, setQuantity] = useState(1);
+    const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
     const viewCountCalled = useRef(false);
 
     useEffect(() => {
@@ -49,6 +55,13 @@ export default function ProductDetailPage() {
                         console.error("Lỗi khi tăng view:", err)
                     );
                 }
+
+                // Thêm vào danh sách đã xem nếu user đã đăng nhập
+                if (user) {
+                    dispatch(addViewedProductAsync(id)).catch(err =>
+                        console.error("Lỗi khi thêm vào danh sách đã xem:", err)
+                    );
+                }
             } catch (err) {
                 console.error("Lỗi khi lấy sản phẩm:", err);
                 setError("Không thể tải thông tin sản phẩm");
@@ -57,7 +70,7 @@ export default function ProductDetailPage() {
             }
         };
         fetchProduct();
-    }, [id]);
+    }, [id, user, dispatch]);
 
     const handleQuantityChange = (newQuantity) => {
         if (newQuantity >= 1 && newQuantity <= product.stock) {
@@ -79,23 +92,23 @@ export default function ProductDetailPage() {
                 productId: product._id,
                 quantity: quantity
             })).unwrap();
-            
+
             console.log('✅ Đã thêm vào giỏ hàng:', result);
-            
+
             // Hiển thị thông báo với logic mới
             const distinctItemCount = result.distinctItemCount || result.items.length;
             const totalItems = result.totalItems || 0;
             const isNewProduct = result.isNewProduct;
-            
+
             if (isNewProduct) {
                 toast.success(`Đã thêm sản phẩm mới vào giỏ hàng! (${distinctItemCount} loại sản phẩm)`);
             } else {
                 toast.success(`Đã tăng số lượng sản phẩm! (${totalItems} sản phẩm)`);
             }
-            
+
             // Auto-refresh cart count để đảm bảo đồng bộ 
             // (Cart state đã được update bởi addToCart.fulfilled)
-            
+
         } catch (error) {
             console.error('❌ Lỗi thêm vào giỏ hàng:', error);
             toast.error(error || "Không thể thêm sản phẩm vào giỏ hàng");
@@ -187,9 +200,12 @@ export default function ProductDetailPage() {
                 {/* Product Info */}
                 <div className="space-y-6">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                            {product.name}
-                        </h1>
+                        <div className="flex items-start justify-between mb-2">
+                            <h1 className="text-3xl font-bold text-gray-800 flex-1">
+                                {product.name}
+                            </h1>
+                            <FavoriteButton productId={product._id} size="large" />
+                        </div>
                         <div className="flex gap-2 mb-4">
                             {product.category && (
                                 <span className="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full">
@@ -227,12 +243,11 @@ export default function ProductDetailPage() {
                         </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="flex items-center gap-6 text-sm text-gray-600">
-                        <span>Đã bán: {product.soldCount || 0}</span>
-                        <span>Lượt xem: {product.viewCount || 0}</span>
-                        <span>Còn lại: {product.stock} sản phẩm</span>
-                    </div>
+                    {/* Product Stats */}
+                    <ProductStats
+                        productId={product._id}
+                        refreshTrigger={statsRefreshTrigger}
+                    />
 
                     {/* Description */}
                     <div>
@@ -320,6 +335,21 @@ export default function ProductDetailPage() {
                         Quay lại
                     </button>
                 </div>
+            </div>
+
+            {/* Reviews Section */}
+            <div className="mt-12" id="reviews">
+                <ReviewSection
+                    productId={product._id}
+                    autoOpenReview={searchParams.get('review') === 'true'}
+                    orderId={searchParams.get('orderId')}
+                    onReviewChange={() => setStatsRefreshTrigger(prev => prev + 1)}
+                />
+            </div>
+
+            {/* Similar Products */}
+            <div className="mt-12">
+                <SimilarProducts productId={product._id} />
             </div>
         </div>
     );
