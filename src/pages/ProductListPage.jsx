@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ShoppingCart } from 'lucide-react';
 import { addToCart, getCartItemCount } from '../features/cart/cartSlice';
 import { formatPrice } from '../utils/formatPrice';
+import FavoriteButton from '../components/FavoriteButton';
 
 export default function ProductListPage() {
     const [products, setProducts] = useState([]);
@@ -263,13 +264,7 @@ function ProductCard({ product, navigate }) {
     const { user } = useSelector((state) => state.auth);
     const { addingToCart } = useSelector((state) => state.cart);
 
-    const handleClick = () => {
-        // Chỉ navigate, view count sẽ được tăng trong ProductDetailPage
-        navigate(`/products/${product._id}`);
-    };
-
     const handleAddToCart = async (e) => {
-        e.stopPropagation();
 
         if (!user) {
             alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
@@ -296,8 +291,7 @@ function ProductCard({ product, navigate }) {
 
     return (
         <div
-            className="group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-            onClick={handleClick}
+            className="group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
         >
             {/* Image Container */}
             <div className="relative overflow-hidden">
@@ -320,6 +314,7 @@ function ProductCard({ product, navigate }) {
                         {product.brand.name}
                     </div>
                 )}
+
             </div>
 
             {/* Content */}
@@ -346,10 +341,8 @@ function ProductCard({ product, navigate }) {
                     <span>Lượt xem: {product.viewCount || 0}</span>
                 </div>
 
-                {/* Stock Status */}
-
-                <div className="mt-2 mb-3">
-
+                {/* Stock Status and Favorite */}
+                <div className="mt-2 mb-3 flex items-center justify-between">
                     {product.stock > 0 ? (
                         <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
                             Còn {product.stock} sản phẩm
@@ -359,19 +352,28 @@ function ProductCard({ product, navigate }) {
                             Hết hàng
                         </span>
                     )}
+                    <FavoriteButton productId={product._id} size="small" />
                 </div>
 
-                {/* Add to Cart Button */}
-                {product.stock > 0 && (
+                {/* Action Buttons */}
+                <div className="flex gap-2">
                     <button
-                        onClick={handleAddToCart}
-                        disabled={addingToCart}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => navigate(`/products/${product._id}`)}
+                        className="flex-1 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
                     >
-                        <ShoppingCart className="h-4 w-4" />
-                        {addingToCart ? "Đang thêm..." : "Thêm vào giỏ hàng"}
+                        Xem chi tiết
                     </button>
-                )}
+                    {product.stock > 0 && (
+                        <button
+                            onClick={handleAddToCart}
+                            disabled={addingToCart}
+                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <ShoppingCart className="h-4 w-4" />
+                            {addingToCart ? "Đang thêm..." : "Thêm giỏ"}
+                        </button>
+                    )}
+                </div>
 
             </div>
         </div>

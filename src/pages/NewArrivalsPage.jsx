@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/axiosConfig";
 import { formatPrice } from '../utils/formatPrice';
+import { ShoppingCart } from "lucide-react";
+import FavoriteButton from "../components/FavoriteButton";
 
 
 const NewArrivalsPage = () => {
@@ -70,7 +72,6 @@ const NewArrivalsPage = () => {
                     <ProductCard
                         key={product._id}
                         product={product}
-                        onClick={() => handleProductClick(product._id)}
                     />
                 ))}
             </div>
@@ -88,7 +89,7 @@ const NewArrivalsPage = () => {
     );
 };
 
-const ProductCard = ({ product, onClick }) => {
+const ProductCard = ({ product }) => {
     const originalPrice = product.price;
     const discountedPrice = product.discountPercentage > 0
         ? originalPrice * (1 - product.discountPercentage / 100)
@@ -96,8 +97,7 @@ const ProductCard = ({ product, onClick }) => {
 
     return (
         <div
-            className="group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-            onClick={onClick}
+            className="group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
         >
             {/* Image Container */}
             <div className="relative overflow-hidden">
@@ -120,6 +120,7 @@ const ProductCard = ({ product, onClick }) => {
                         {product.brand.name}
                     </div>
                 )}
+
             </div>
 
             {/* Content */}
@@ -146,8 +147,8 @@ const ProductCard = ({ product, onClick }) => {
                     <span>Lượt xem: {product.viewCount || 0}</span>
                 </div>
 
-                {/* Stock Status */}
-                <div className="mt-2">
+                {/* Stock Status and Favorite */}
+                <div className="mt-2 flex items-center justify-between">
                     {product.stock > 0 ? (
                         <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
                             Còn {product.stock} sản phẩm
@@ -157,6 +158,18 @@ const ProductCard = ({ product, onClick }) => {
                             Hết hàng
                         </span>
                     )}
+                    <FavoriteButton productId={product._id} size="small" />
+                </div>
+
+                {/* Buy Button */}
+                <div className="mt-3">
+                    <button
+                        onClick={() => window.location.href = `/products/${product._id}`}
+                        className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <ShoppingCart className="w-4 h-4" />
+                        Xem chi tiết
+                    </button>
                 </div>
             </div>
         </div>

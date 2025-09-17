@@ -7,6 +7,7 @@ import {
   ShoppingBag,
   LogOut,
   ShoppingBasket,
+  Heart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,7 @@ const Navbar = () => {
   const handleProfileClick = () => navigate("/profile");
   const handleMyOrdersClick = () => navigate("/orders-tracking");
   const handlePurchaseHistoryClick = () => navigate("/purchase-history");
+  const handleFavoritesClick = () => navigate("/favorites");
 
   const handleLogout = () => {
     dispatch(logout());
@@ -116,13 +118,25 @@ const Navbar = () => {
           >
             <ShoppingCart className="h-5 w-5 text-gray-700" />
             {user && badgeCount > 0 && (
-              <span 
+              <span
                 className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center min-w-[1.25rem]"
               >
                 {badgeCount > 99 ? "99+" : badgeCount}
               </span>
             )}
           </Button>
+
+          {/* Favorites Icon */}
+          {user && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hover:bg-gray-100"
+              onClick={handleFavoritesClick}
+            >
+              <Heart className="h-5 w-5 text-gray-700" />
+            </Button>
+          )}
 
           {/* User / Auth */}
           {user ? (
