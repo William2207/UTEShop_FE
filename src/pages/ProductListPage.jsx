@@ -270,7 +270,7 @@ function ProductCard({ product, navigate }) {
 
     const handleAddToCart = async (e) => {
         e.stopPropagation();
-        
+
         if (!user) {
             alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
             navigate('/login');
@@ -282,7 +282,7 @@ function ProductCard({ product, navigate }) {
                 productId: product._id,
                 quantity: 1
             })).unwrap();
-            
+
             alert(`Đã thêm sản phẩm vào giỏ hàng!`);
         } catch (error) {
             alert(error || "Không thể thêm sản phẩm vào giỏ hàng");

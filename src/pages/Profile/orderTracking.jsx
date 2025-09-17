@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import api from "@/api/axiosConfig";
+import { checkOrderReviewed } from "../../api/reviewApi";
 import {
   Search,
   Package,
@@ -14,7 +16,6 @@ import {
   ShoppingBag,
   Star,
 } from "lucide-react";
-import { useEffect } from "react";
 
 // Order status mapping
 const orderStatuses = {
@@ -51,15 +52,35 @@ const orderStatuses = {
 };
 
 export function OrderTracking() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [orders, setOrdersData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [reviewStatus, setReviewStatus] = useState({}); // Track review status for each order
   //fetch API
   useEffect(() => {
     const fetchOrdersData = async () => {
       try {
         const response = await api.get("/orders");
         setOrdersData(response.data.orders);
+
+        // Check review status for delivered orders
+        const deliveredOrders = response.data.orders.filter(order => order.status === 5);
+        const reviewStatusMap = {};
+
+        await Promise.all(
+          deliveredOrders.map(async (order) => {
+            try {
+              const reviewCheck = await checkOrderReviewed(order._id);
+              reviewStatusMap[order._id] = reviewCheck.hasReview;
+            } catch (error) {
+              console.error(`Error checking review for order ${order._id}:`, error);
+              reviewStatusMap[order._id] = false;
+            }
+          })
+        );
+
+        setReviewStatus(reviewStatusMap);
       } catch (err) {
         console.error("Lỗi khi fetch profile:", err);
         setError(err.message);
@@ -114,6 +135,20 @@ export function OrderTracking() {
     }
   };
 
+  // Xử lý điều hướng đến trang đánh giá sản phẩm
+  const handleReviewProduct = (productId, orderId) => {
+    // Điều hướng đến trang chi tiết sản phẩm với query params để focus vào review section
+    navigate(`/products/${productId}?review=true&orderId=${orderId}#reviews`);
+  };
+
+  // Update review status after user completes review
+  const updateReviewStatus = (orderId) => {
+    setReviewStatus(prev => ({
+      ...prev,
+      [orderId]: true
+    }));
+  };
+
   // Đã xóa type annotation
   const renderStatusTimeline = (currentStatus) => {
     const statuses = [1, 2, 3, 4, 5];
@@ -129,13 +164,12 @@ export function OrderTracking() {
           return (
             <div key={status} className="flex flex-col items-center flex-1">
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  isCompleted
-                    ? "bg-primary text-primary-foreground"
-                    : isActive
+                className={`w-8 h-8 rounded-full flex items-center justify-center ${isCompleted
+                  ? "bg-primary text-primary-foreground"
+                  : isActive
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground"
-                }`}
+                  }`}
               >
                 <StatusIcon className="w-4 h-4" />
               </div>
@@ -152,9 +186,8 @@ export function OrderTracking() {
               </div>
               {index < statuses.length - 1 && (
                 <div
-                  className={`absolute h-0.5 w-full top-4 left-1/2 ${
-                    isCompleted ? "bg-primary" : "bg-muted"
-                  }`}
+                  className={`absolute h-0.5 w-full top-4 left-1/2 ${isCompleted ? "bg-primary" : "bg-muted"
+                    }`}
                   style={{ transform: "translateX(50%)", zIndex: -1 }}
                 />
               )}
@@ -296,10 +329,31 @@ export function OrderTracking() {
                         </Button>
                       )}
                       {order.status === 5 && (
-                        <Button className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90">
-                          <Star className="w-4 h-4 mr-2" />
-                          Đánh giá
-                        </Button>
+                        <div className="flex flex-col gap-2">
+                          {reviewStatus[order._id] ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled
+                              className="bg-green-50 border-green-200 text-green-700"
+                            >
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Đã đánh giá
+                            </Button>
+                          ) : (
+                            order.items.map((item, index) => (
+                              <Button
+                                key={index}
+                                className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+                                size="sm"
+                                onClick={() => handleReviewProduct(item.product._id, order._id)}
+                              >
+                                <Star className="w-4 h-4 mr-2" />
+                                Đánh giá {item.product?.name?.substring(0, 20)}...
+                              </Button>
+                            ))
+                          )}
+                        </div>
                       )}
                       {order.status === 1 && (
                         <Button

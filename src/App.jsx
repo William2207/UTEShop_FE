@@ -20,6 +20,8 @@ import CheckoutPage from './pages/CheckoutPage';
 import PaymentTestPage from './pages/PaymentTestPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentFailurePage from './pages/PaymentFailurePage';
+import FavoritesPage from './pages/FavoritesPage';
+import ViewedProductsPage from './pages/ViewedProductsPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { OrderTracking } from './pages/Profile/orderTracking';
@@ -55,6 +57,24 @@ function App() {
             <Route path="orders" element={<OrderPage />} />
             <Route path="orders-tracking" element={<OrderTracking />} />
             <Route path="purchase-history" element={<PurchaseHistory />} />
+
+            {/* Protected routes for favorites and viewed products */}
+            <Route
+              path="favorites"
+              element={
+                <PrivateRoute>
+                  <FavoritesPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="viewed-products"
+              element={
+                <PrivateRoute>
+                  <ViewedProductsPage />
+                </PrivateRoute>
+              }
+            />
 
             {/* Route Profile được bảo vệ - chỉ đăng nhập mới vào được */}
             <Route
