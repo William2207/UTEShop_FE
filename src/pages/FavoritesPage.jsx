@@ -1,28 +1,60 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { Heart, Trash2 } from 'lucide-react';
+import { Heart, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getFavoritesAsync, toggleFavoriteAsync } from '../features/favorites/favoriteSlice';
 import { formatPrice } from '../utils/formatPrice';
 
 const FavoritesPage = () => {
     const dispatch = useDispatch();
     const { user } = useSelector(state => state.auth);
-    const { items, loading, error } = useSelector(state => state.favorites);
+    const { items, loading, error, currentPage: reduxCurrentPage, totalPages, total } = useSelector(state => state.favorites);
+
+    // State cho phân trang
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 12; // 12 sản phẩm mỗi trang
 
     useEffect(() => {
         if (user) {
-            dispatch(getFavoritesAsync({ page: 1, limit: 20 }));
+            dispatch(getFavoritesAsync({ page: currentPage, limit: itemsPerPage }));
         }
-    }, [dispatch, user]);
+    }, [dispatch, user, currentPage]);
 
     const handleRemoveFavorite = async (productId) => {
+        // Xác nhận trước khi xóa
+        const confirmed = window.confirm('Bạn có chắc chắn muốn bỏ yêu thích sản phẩm này?');
+        if (!confirmed) return;
+
         try {
             await dispatch(toggleFavoriteAsync(productId)).unwrap();
+            // Hiển thị thông báo thành công
+            alert('Đã bỏ yêu thích sản phẩm!');
+
+            // Nếu đây là sản phẩm cuối cùng trong trang và không phải trang đầu tiên
+            if (items.length === 1 && currentPage > 1) {
+                // Chuyển về trang trước
+                setCurrentPage(currentPage - 1);
+            } else {
+                // Tải lại danh sách yêu thích ở trang hiện tại
+                dispatch(getFavoritesAsync({ page: currentPage, limit: itemsPerPage }));
+            }
         } catch (error) {
             console.error('Error removing favorite:', error);
+            alert('Có lỗi xảy ra khi bỏ yêu thích sản phẩm');
         }
     };
+
+    // Xử lý chuyển trang
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage);
+        // Scroll lên đầu trang
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Tính toán thông tin phân trang
+    const totalItems = total || items.length;
+    const startItem = totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
+    const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
     if (!user) {
         return (
@@ -73,7 +105,13 @@ const FavoritesPage = () => {
         <div className="container mx-auto px-4 py-8">
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold">Sản phẩm yêu thích</h1>
-                <span className="text-gray-600">{items.length} sản phẩm</span>
+                <div className="text-gray-600">
+                    {totalItems > 0 ? (
+                        <span>Hiển thị {startItem}-{endItem} trong tổng số {totalItems} sản phẩm</span>
+                    ) : (
+                        <span>0 sản phẩm</span>
+                    )}
+                </div>
             </div>
 
             {items.length === 0 ? (
@@ -92,7 +130,7 @@ const FavoritesPage = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {items.map((product) => (
                         <div key={product._id} className="group relative bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                            <Link to={`/product/${product._id}`} className="block">
+                            <Link to={`/products/${product._id}`} className="block">
                                 <div className="aspect-square overflow-hidden rounded-t-lg">
                                     <img
                                         src={product.images?.[0] || '/placeholder-product.jpg'}
@@ -113,8 +151,9 @@ const FavoritesPage = () => {
                                                 {formatPrice(product.price / (1 - product.discountPercentage / 100))}
                                             </div>
                                         )}
-                                        <div className="text-xs text-gray-500">
-                                            {product.soldCount} đã bán
+                                        <div className="flex items-center justify-between text-xs text-gray-500">
+                                            <span>Đã bán: {product.soldCount}</span>
+                                            <span>Còn lại: {product.stock}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -124,15 +163,60 @@ const FavoritesPage = () => {
                             <button
                                 onClick={(e) => {
                                     e.preventDefault();
+                                    e.stopPropagation();
                                     handleRemoveFavorite(product._id);
                                 }}
-                                className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                                className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110"
                                 title="Bỏ yêu thích"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
+
+                            {/* Favorite indicator */}
+                            <div className="absolute top-2 left-2 bg-red-500 text-white p-1 rounded-full">
+                                <Heart className="w-4 h-4 fill-current" />
+                            </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center mt-8 space-x-2">
+                    {/* Previous Button */}
+                    <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage <= 1}
+                        className="flex items-center px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                    >
+                        <ChevronLeft className="w-4 h-4 mr-1" />
+                        Trước
+                    </button>
+
+                    {/* Page Numbers */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                        <button
+                            key={pageNum}
+                            onClick={() => handlePageChange(pageNum)}
+                            className={`px-3 py-2 border rounded-lg transition-colors ${pageNum === currentPage
+                                    ? 'bg-blue-600 text-white border-blue-600'
+                                    : 'border-gray-300 hover:bg-gray-50'
+                                }`}
+                        >
+                            {pageNum}
+                        </button>
+                    ))}
+
+                    {/* Next Button */}
+                    <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage >= totalPages}
+                        className="flex items-center px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                    >
+                        Sau
+                        <ChevronRight className="w-4 h-4 ml-1" />
+                    </button>
                 </div>
             )}
         </div>

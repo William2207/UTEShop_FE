@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "../api/axiosConfig";
 import { useNavigate } from "react-router-dom";
+import { Heart, ShoppingCart } from "lucide-react";
+import FavoriteButton from "../components/FavoriteButton";
 
 const HomePage = () => {
     const [blocks, setBlocks] = useState(null);
@@ -169,11 +171,6 @@ const Section = ({ title, products, maxCols = 4, viewAllLink, sectionStyle, tota
 const ProductCard = ({ product }) => {
     const navigate = useNavigate();
 
-    const handleClick = () => {
-        // Chỉ navigate, view count sẽ được tăng trong ProductDetailPage
-        navigate(`/products/${product._id}`);
-    };
-
     const originalPrice = product.price;
     const discountedPrice = product.discountPercentage > 0
         ? originalPrice * (1 - product.discountPercentage / 100)
@@ -181,8 +178,7 @@ const ProductCard = ({ product }) => {
 
     return (
         <div
-            className="group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-            onClick={handleClick}
+            className="group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
         >
             {/* Image Container */}
             <div className="relative overflow-hidden">
@@ -205,6 +201,7 @@ const ProductCard = ({ product }) => {
                         {product.brand.name}
                     </div>
                 )}
+
             </div>
 
             {/* Content */}
@@ -231,8 +228,8 @@ const ProductCard = ({ product }) => {
                     <span>Lượt xem: {product.viewCount || 0}</span>
                 </div>
 
-                {/* Stock Status */}
-                <div className="mt-2">
+                {/* Stock Status and Favorite */}
+                <div className="mt-2 flex items-center justify-between">
                     {product.stock > 0 ? (
                         <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
                             Còn {product.stock} sản phẩm
@@ -242,6 +239,21 @@ const ProductCard = ({ product }) => {
                             Hết hàng
                         </span>
                     )}
+                    <FavoriteButton productId={product._id} size="small" />
+                </div>
+
+                {/* Buy Button */}
+                <div className="mt-3">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/products/${product._id}`);
+                        }}
+                        className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <ShoppingCart className="w-4 h-4" />
+                        Xem chi tiết
+                    </button>
                 </div>
             </div>
         </div>
