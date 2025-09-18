@@ -1,7 +1,8 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Provider } from 'react-redux';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Provider } from "react-redux";
 import "./App.css";
+import Modal from "react-modal";
 
 import store from './redux/store';
 import MainLayout from './layouts/MainLayout';
@@ -17,18 +18,18 @@ import NewArrivalsPage from './pages/NewArrivalsPage';
 import OrderPage from './pages/OrderPage';
 import CheckoutPage from './pages/CheckoutPage';
 
-import PaymentTestPage from './pages/PaymentTestPage';
-import PaymentSuccessPage from './pages/PaymentSuccessPage';
-import PaymentFailurePage from './pages/PaymentFailurePage';
-import FavoritesPage from './pages/FavoritesPage';
-import ViewedProductsPage from './pages/ViewedProductsPage';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import PaymentTestPage from "./pages/PaymentTestPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
+import PaymentFailurePage from "./pages/PaymentFailurePage";
+import FavoritesPage from "./pages/FavoritesPage";
+import ViewedProductsPage from "./pages/ViewedProductsPage";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
-import { OrderTracking } from './pages/Profile/orderTracking';
-import { PurchaseHistory } from './pages/Profile/purchaseHistory';
+import { OrderTracking } from "./pages/Profile/orderTracking";
+import { PurchaseHistory } from "./pages/Profile/purchaseHistory";
 
-import PrivateRoute from './components/utils/PrivateRoute';
-
+import PrivateRoute from "./components/utils/PrivateRoute";
+Modal.setAppElement("#root");
 
 function App() {
   return (

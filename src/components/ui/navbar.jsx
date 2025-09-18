@@ -36,7 +36,7 @@ const Navbar = () => {
     if (user) {
       dispatch(getCartItemCount());
     }
-  }, [user, dispatch]);
+  }, [user]);
 
   const handleLogoClick = () => navigate("/");
   const handleShopClick = () => navigate("/products");

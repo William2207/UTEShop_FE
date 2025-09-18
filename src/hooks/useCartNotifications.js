@@ -11,6 +11,7 @@ export const useCartNotifications = () => {
   const [badgeCount, setBadgeCount] = useState(0);
   const [hasInitialized, setHasInitialized] = useState(false);
 
+  // ✅ Tách riêng logic fetch cart - chỉ gọi 1 lần khi user đăng nhập
   useEffect(() => {
     // Đếm số lượng sản phẩm khác nhau
     if (user) {
@@ -37,5 +38,6 @@ export const useCartNotifications = () => {
   return {
     badgeCount, // Số lượng sản phẩm khác nhau trong giỏ hàng
     hasItems: items.length > 0, // Hiển thị badge khi có sản phẩm trong giỏ
+    totalItems: items.length // Tổng số items trong giỏ hàng
   };
 };
