@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, MapPin, Edit, Trash2, Plus, Lock } from "lucide-react";
 import { useEffect } from "react";
-export function UserProfile() {
+function UserProfile() {
   const [activeTab, setActiveTab] = useState("personal");
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -537,3 +537,5 @@ export function UserProfile() {
     </div>
   );
 }
+
+export default UserProfile;
