@@ -11,7 +11,7 @@ import RegisterPage from './pages/Register';
 import ProductListPage from './pages/ProductListPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import ForgotPassword from './pages/ForgotPassword';
-import { UserProfile } from './pages/Profile/Profile';
+import UserProfile from './pages/Profile/Profile';
 import CartPage from './pages/CartPage';
 import NewArrivalsPage from './pages/NewArrivalsPage';
 import OrderPage from './pages/OrderPage';

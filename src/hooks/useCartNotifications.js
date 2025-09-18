@@ -5,10 +5,11 @@ import { fetchCart } from '../features/cart/cartSlice';
 
 export const useCartNotifications = () => {
   const dispatch = useDispatch();
-  const { items } = useSelector((state) => state.cart);
+  const { items, loading, error } = useSelector((state) => state.cart);
   const user = useSelector((state) => state.auth.user);
   const location = useLocation();
   const [badgeCount, setBadgeCount] = useState(0);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   useEffect(() => {
     // Đếm số lượng sản phẩm khác nhau
@@ -16,12 +17,22 @@ export const useCartNotifications = () => {
       const distinctProductCount = new Set(items.map(item => item.product._id)).size;
       setBadgeCount(distinctProductCount);
     }
+  }, [items, user]);
 
-    // Fetch cart nếu chưa có dữ liệu và user đã đăng nhập
-    if (user && items.length === 0) {
+  // Separate useEffect để tránh vòng lặp vô hạn
+  useEffect(() => {
+    // Chỉ fetch cart một lần khi user đăng nhập và chưa khởi tạo
+    if (user && !hasInitialized && !loading) {
+      console.log('🛒 Initializing cart for user:', user.id);
       dispatch(fetchCart());
+      setHasInitialized(true);
     }
-  }, [items, location.pathname, user, dispatch]);
+    
+    // Reset khi user logout
+    if (!user) {
+      setHasInitialized(false);
+    }
+  }, [user, hasInitialized, loading, dispatch]);
 
   return {
     badgeCount, // Số lượng sản phẩm khác nhau trong giỏ hàng
