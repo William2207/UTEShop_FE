@@ -1,3 +1,4 @@
+import * as React from "react";
 import {
   Search,
   ShoppingCart,
@@ -5,6 +6,7 @@ import {
   ChevronDown,
   ShoppingBag,
   LogOut,
+  ShoppingBasket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,31 +19,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logout } from "../../features/auth/authSlice";
-import { getCartItemCount, logCartDetails } from "../../features/cart/cartSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { useEffect } from "react";
 import { useCartNotifications } from "../../hooks/useCartNotifications";
+import { getCartItemCount } from "../../features/cart/cartSlice";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
-  const { badgeCount, hasItems } = useCartNotifications();
+  const { badgeCount } = useCartNotifications(); // Lấy badge count từ custom hook
 
-  // Lấy số lượng giỏ hàng khi user đăng nhập
+  // Lấy số lượng giỏ hàng khi user đăng nhập hoặc giỏ hàng thay đổi
   useEffect(() => {
     if (user) {
       dispatch(getCartItemCount());
-      dispatch(logCartDetails()); // Log chi tiết giỏ hàng
     }
   }, [user, dispatch]);
-
-  // Auto-refresh badge count khi có thay đổi trong cart state
-  useEffect(() => {
-    // Badge count sẽ tự động update từ Redux state
-    console.log('🔢 Badge count updated:', badgeCount);
-    console.log('🔢 User:', user);
-  }, [badgeCount, user]);
 
   const handleLogoClick = () => navigate("/");
   const handleShopClick = () => navigate("/products");
@@ -49,6 +43,9 @@ const Navbar = () => {
   const handleOnSaleClick = () => navigate("/products?sort=top-discount");
   const handleBrandsClick = () => navigate("/products"); // hoặc /brands nếu có
   const handleProfileClick = () => navigate("/profile");
+  const handleMyOrdersClick = () => navigate("/orders-tracking");
+  const handlePurchaseHistoryClick = () => navigate("/purchase-history");
+
   const handleLogout = () => {
     dispatch(logout());
     navigate("/");
@@ -62,36 +59,38 @@ const Navbar = () => {
           onClick={handleLogoClick}
           className="flex-shrink-0 cursor-pointer select-none"
         >
-          <h1 className="text-2xl font-bold text-black">UTE SHOP</h1>
+          <h1 className="text-2xl font-bold text-black hover:text-blue-600 transition-colors">
+            UTE SHOP
+          </h1>
         </div>
 
         {/* Navigation Menu */}
         <div className="hidden md:flex items-center space-x-8">
-          <button
+          <div
             onClick={handleShopClick}
-            className="flex items-center space-x-1 hover:text-blue-600 text-gray-700"
+            className="flex items-center space-x-1 cursor-pointer hover:text-blue-600 transition-colors"
           >
-            <span>Shop</span>
-            <ChevronDown className="h-4 w-4" />
-          </button>
-          <button
+            <span className="text-gray-700 hover:text-blue-600">Shop</span>
+            <ChevronDown className="h-4 w-4 text-gray-700" />
+          </div>
+          <span
             onClick={handleOnSaleClick}
-            className="text-gray-700 hover:text-blue-600"
+            className="text-gray-700 hover:text-blue-600 cursor-pointer transition-colors"
           >
             On Sale
-          </button>
-          <button
+          </span>
+          <span
             onClick={handleNewArrivalsClick}
-            className="text-gray-700 hover:text-blue-600"
+            className="text-gray-700 hover:text-blue-600 cursor-pointer transition-colors"
           >
             New Arrivals
-          </button>
-          <button
+          </span>
+          <span
             onClick={handleBrandsClick}
-            className="text-gray-700 hover:text-blue-600"
+            className="text-gray-700 hover:text-blue-600 cursor-pointer transition-colors"
           >
             Brands
-          </button>
+          </span>
         </div>
 
         {/* Search Bar */}
@@ -116,7 +115,7 @@ const Navbar = () => {
             onClick={() => navigate("/cart")}
           >
             <ShoppingCart className="h-5 w-5 text-gray-700" />
-            {user && (
+            {user && badgeCount > 0 && (
               <span 
                 className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center min-w-[1.25rem]"
               >
@@ -125,34 +124,32 @@ const Navbar = () => {
             )}
           </Button>
 
-          {/* Dummy bag / orders */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hover:bg-gray-100"
-            onClick={() => navigate("/orders")}
-          >
-            <ShoppingBag className="h-5 w-5 text-gray-700" />
-          </Button>
-
           {/* User / Auth */}
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="flex items-center space-x-2 hover:bg-gray-100"
+                  className="flex items-center space-x-2 hover:bg-gray-100 px-2"
                 >
                   <User className="h-5 w-5 text-gray-700" />
-                  <span className="text-gray-700 font-medium">
-                    {user.name || user.email}
+                  <span className="text-gray-700 font-medium hidden sm:inline">
+                    {user.name || user.email.split('@')[0]}
                   </span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={handleProfileClick}>
                   <User className="mr-2 h-4 w-4" />
-                  Profile
+                  <span>My Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleMyOrdersClick}>
+                  <ShoppingBasket className="mr-2 h-4 w-4" />
+                  <span>My Orders</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handlePurchaseHistoryClick}>
+                  <ShoppingBag className="mr-2 h-4 w-4" />
+                  <span>Purchase History</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -160,18 +157,18 @@ const Navbar = () => {
                   className="text-red-600 focus:text-red-600"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  Log out
+                  <span>Log out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <Button
               variant="ghost"
-              size="icon"
               className="hover:bg-gray-100"
               onClick={() => navigate("/login")}
             >
-              <User className="h-5 w-5 text-gray-700" />
+              <User className="h-5 w-5 text-gray-700 mr-1" />
+              <span className="text-gray-700 font-medium">Login</span>
             </Button>
           )}
         </div>

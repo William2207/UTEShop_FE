@@ -11,25 +11,39 @@ import RegisterPage from './pages/Register';
 import ProductListPage from './pages/ProductListPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import ForgotPassword from './pages/ForgotPassword';
-import UserProfile from './pages/Profile/Profile';  // Import trang Profile
-import CartPage from './pages/CartPage';  // Import trang Cart
-import PrivateRoute from './components/utils/PrivateRoute';  // Tạo component bảo vệ route
+import UserProfile from './pages/Profile/Profile';
+import CartPage from './pages/CartPage';
+import NewArrivalsPage from './pages/NewArrivalsPage';
+import OrderPage from './pages/OrderPage';
+import CheckoutPage from './pages/CheckoutPage';
+import { OrderTracking } from './pages/Profile/orderTracking';
+import { PurchaseHistory } from './pages/Profile/purchaseHistory';
+
+import PrivateRoute from './components/utils/PrivateRoute';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function App() {
   return (
     <Provider store={store}>
       <Router>
         <Routes>
-          <Route path="/" element={<MainLayout />}>
+          <Route 
+            path="/" 
+            element={<MainLayout />}
+            errorElement={<ErrorBoundary />}
+          >
             <Route index element={<HomePage />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="forgot" element={<ForgotPassword />} />
             <Route path="products" element={<ProductListPage />} />
             <Route path="products/:id" element={<ProductDetailPage />} />
-            
-            {/* Route Cart - có thể xem mà không cần đăng nhập, nhưng cần đăng nhập để thao tác */}
+            <Route path="new-arrivals" element={<NewArrivalsPage />} />
             <Route path="cart" element={<CartPage />} />
+            <Route path="checkout" element={<CheckoutPage />} />
+            <Route path="orders" element={<OrderPage />} />
+            <Route path="orders-tracking" element={<OrderTracking />} />
+            <Route path="purchase-history" element={<PurchaseHistory />} />
             
             {/* Route Profile được bảo vệ - chỉ đăng nhập mới vào được */}
             <Route 

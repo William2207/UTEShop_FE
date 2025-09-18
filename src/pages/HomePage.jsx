@@ -3,7 +3,7 @@ import axios from "../api/axiosConfig";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
 import { ShoppingCart } from 'lucide-react';
-import { addToCart, getCartItemCount } from '../features/cart/cartSlice';
+import { addToCart } from '../features/cart/cartSlice';
 import { formatPrice } from '../utils/formatPrice';
 
 const ProductCard = ({ product }) => {
@@ -135,18 +135,15 @@ const HomePage = () => {
                 setLoading(true);
                 setError(null);
                 const res = await axios.get("/products/home-blocks");
-                console.log("API Response:", res.data);
-                console.log("Totals:", res.data.totals);
                 
-                // Debug: Log chi tiết để kiểm tra dữ liệu
-                console.log("Newest Products:", res.data.newest);
-                console.log("Best Selling Products:", res.data.bestSelling);
+                // Ghi log để debug
+                console.log("API Response:", res.data);
                 
                 setBlocks(res.data);
                 setTotals(res.data.totals);
             } catch (err) {
                 console.error("Lỗi khi lấy home blocks:", err);
-                // Log chi tiết lỗi
+                // Ghi log chi tiết lỗi để dễ dàng sửa chữa
                 console.error("Error Details:", err.response?.data || err.message);
                 setError(err.response?.data?.message || "Không thể tải dữ liệu sản phẩm");
             } finally {
@@ -155,9 +152,6 @@ const HomePage = () => {
         };
         fetchBlocks();
     }, []);
-
-    // Debug: Thêm log để kiểm tra trạng thái
-    console.log("Current State:", { blocks, totals, loading, error });
 
     if (loading) {
         return (
@@ -181,7 +175,7 @@ const HomePage = () => {
         );
     }
 
-    // Debug: Hiển thị thông báo nếu không có sản phẩm
+    // Hiển thị thông báo nếu không có sản phẩm, thân thiện hơn với người dùng
     if (!blocks || Object.keys(blocks).length === 0) {
         return (
             <div className="text-center py-8">
@@ -197,6 +191,7 @@ const HomePage = () => {
                 <p className="text-gray-600">Khám phá những sản phẩm chất lượng nhất</p>
             </div>
 
+            {/* Chỉ render section nếu có sản phẩm */}
             {blocks.newest && blocks.newest.length > 0 && (
                 <Section 
                     title="Sản phẩm mới nhất" 
@@ -257,58 +252,68 @@ const HomePage = () => {
 const Section = ({ title, products, maxCols = 4, viewAllLink, sectionStyle, totalCount, showViewAll }) => {
     const navigate = useNavigate();
 
-    if (!products || products.length === 0) return null;
-
-    const gridCols = {
-        2: "grid-cols-1 sm:grid-cols-2",
-        3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
-        4: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
-        6: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6",
-        8: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8"
+    const getGridCols = () => {
+        switch(maxCols) {
+            case 2: return 'grid-cols-1 md:grid-cols-2';
+            case 3: return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+            case 4: return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
+            default: return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
+        }
     };
 
-    const sectionStyles = {
-        newest: "bg-gradient-to-r from-blue-50 to-indigo-50",
-        bestselling: "bg-gradient-to-r from-red-50 to-pink-50",
-        mostviewed: "bg-gradient-to-r from-green-50 to-emerald-50",
-        discount: "bg-gradient-to-r from-yellow-50 to-orange-50"
+    const getSectionBgColor = () => {
+        switch(sectionStyle) {
+            case 'newest': return 'bg-gradient-to-r from-blue-50 to-indigo-50';
+            case 'bestselling': return 'bg-gradient-to-r from-green-50 to-emerald-50';
+            case 'mostviewed': return 'bg-gradient-to-r from-purple-50 to-pink-50';
+            case 'discount': return 'bg-gradient-to-r from-red-50 to-orange-50';
+            default: return 'bg-gray-50';
+        }
     };
+
+    const getSectionTitleColor = () => {
+        switch(sectionStyle) {
+            case 'newest': return 'text-blue-700';
+            case 'bestselling': return 'text-green-700';
+            case 'mostviewed': return 'text-purple-700';
+            case 'discount': return 'text-red-700';
+            default: return 'text-gray-700';
+        }
+    };
+
+    if (!products || products.length === 0) {
+        return null;
+    }
 
     return (
-        <section className={`py-12 px-8 rounded-3xl ${sectionStyles[sectionStyle] || 'bg-gray-50'}`}>
-            {/* Section Title */}
-            <div className="text-center mb-12">
-                <h2 className="text-4xl font-bold text-gray-800 mb-4 uppercase tracking-wider">
-                    {title}
-                </h2>
-                <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mb-6"></div>
-                <p className="text-gray-600">
-                    Hiển thị {products.length} / {totalCount || products.length} sản phẩm
-                </p>
-            </div>
-
-            {/* Products Grid */}
-            <div className={`grid ${gridCols[maxCols]} gap-6 mb-8`}>
-                {products.map((p) => (
-                    <ProductCard key={p._id} product={p} />
-                ))}
-            </div>
-
-            {/* View All Button */}
-            {showViewAll && viewAllLink && (
-                <div className="text-center">
+        <div className={`rounded-xl p-6 ${getSectionBgColor()}`}>
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h2 className={`text-2xl font-bold ${getSectionTitleColor()}`}>
+                        {title}
+                    </h2>
+                    {totalCount && (
+                        <p className="text-sm text-gray-600 mt-1">
+                            {totalCount} sản phẩm có sẵn
+                        </p>
+                    )}
+                </div>
+                {showViewAll && viewAllLink && (
                     <button
                         onClick={() => navigate(viewAllLink)}
-                        className="inline-flex items-center px-8 py-3 bg-white border-2 border-gray-300 rounded-full font-semibold text-gray-700 hover:border-blue-500 hover:text-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                        className="px-4 py-2 bg-white text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors duration-200 text-sm font-medium"
                     >
-                        <span>Xem thêm</span>
-                        <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
+                        Xem tất cả
                     </button>
-                </div>
-            )}
-        </section>
+                )}
+            </div>
+
+            <div className={`grid ${getGridCols()} gap-4`}>
+                {products.map((product) => (
+                    <ProductCard key={product._id} product={product} />
+                ))}
+            </div>
+        </div>
     );
 };
 

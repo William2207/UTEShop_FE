@@ -166,7 +166,7 @@ const CheckoutPage = () => {
                                 <h3 className="font-semibold text-gray-800">{productDetails.name}</h3>
                                 <p className="text-sm text-gray-500">Size: {productDetails.size || 'Standard'}</p>
                                 <p className="text-sm text-gray-500">Color: {productDetails.color || 'Default'}</p>
-                                <p className="font-bold text-lg">{productDetails.price?.toLocaleString()} đ</p>
+                                <p className="font-bold text-lg">{productDetails.price?.toLocaleString()}₫</p>
                             </div>
                         </div>
 
@@ -176,12 +176,12 @@ const CheckoutPage = () => {
                             <div className="space-y-2">
                                 <div className="flex justify-between">
                                     <span>Subtotal</span>
-                                    <span>{(productDetails.price * quantity).toLocaleString()} đ</span>
+                                    <span>{(productDetails.price * quantity).toLocaleString()}₫</span>
                                 </div>
                                 {productDetails.discountPercentage > 0 && (
                                     <div className="flex justify-between text-red-600">
                                         <span>Discount (-{productDetails.discountPercentage}%)</span>
-                                        <span>-{Math.round(productDetails.price * quantity * productDetails.discountPercentage / 100).toLocaleString()} đ</span>
+                                        <span>-{Math.round(productDetails.price * quantity * productDetails.discountPercentage / 100).toLocaleString()}₫</span>
                                     </div>
                                 )}
 
@@ -194,7 +194,7 @@ const CheckoutPage = () => {
                                             : 0;
                                         const finalTotal = (productDetails.price * quantity) - discountAmount;
                                         return Math.round(finalTotal).toLocaleString();
-                                    })()} đ</span>
+                                    })()}₫</span>
                                 </div>
                             </div>
                         </div>

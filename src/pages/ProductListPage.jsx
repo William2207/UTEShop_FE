@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "../api/axiosConfig";
 import { useNavigate, useSearchParams } from "react-router-dom";
+
 import { useDispatch, useSelector } from 'react-redux';
 import { ShoppingCart } from 'lucide-react';
 import { addToCart, getCartItemCount } from '../features/cart/cartSlice';
@@ -257,6 +258,7 @@ export default function ProductListPage() {
 
 // ================= ProductCard =================
 function ProductCard({ product, navigate }) {
+
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
     const { addingToCart } = useSelector((state) => state.cart);
@@ -329,11 +331,11 @@ function ProductCard({ product, navigate }) {
                 {/* Price */}
                 <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg font-bold text-red-600">
-                        {formatPrice(discountedPrice)}
+                        {discountedPrice.toLocaleString()}₫
                     </span>
                     {product.discountPercentage > 0 && (
                         <span className="text-sm text-gray-500 line-through">
-                            {formatPrice(originalPrice)}
+                            {originalPrice.toLocaleString()}₫
                         </span>
                     )}
                 </div>
@@ -345,7 +347,9 @@ function ProductCard({ product, navigate }) {
                 </div>
 
                 {/* Stock Status */}
+
                 <div className="mt-2 mb-3">
+
                     {product.stock > 0 ? (
                         <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
                             Còn {product.stock} sản phẩm
@@ -368,6 +372,7 @@ function ProductCard({ product, navigate }) {
                         {addingToCart ? "Đang thêm..." : "Thêm vào giỏ hàng"}
                     </button>
                 )}
+
             </div>
         </div>
     );
