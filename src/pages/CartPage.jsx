@@ -6,13 +6,14 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Separator } from '../components/ui/separator';
 import { Checkbox } from '../components/ui/checkbox';
-import { 
-  fetchCart, 
-  updateCartItem, 
-  removeFromCart, 
-  clearCart 
+import {
+  fetchCart,
+  updateCartItem,
+  removeFromCart,
+  clearCart
 } from '../features/cart/cartSlice';
 import { formatPrice } from '../utils/formatPrice';
+
 
 const CartPage = () => {
   const dispatch = useDispatch();
@@ -20,7 +21,7 @@ const CartPage = () => {
   const location = useLocation();
   const { user } = useSelector((state) => state.auth);
   const { items, totalItems, totalAmount, loading, error } = useSelector((state) => state.cart);
-  
+
   // State để quản lý các sản phẩm được chọn
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [selectAll, setSelectAll] = useState(false);
@@ -156,7 +157,7 @@ const CartPage = () => {
             <ShoppingBag className="h-20 w-20 mx-auto text-gray-300 mb-6" />
             <h2 className="text-xl font-medium mb-2 text-gray-800">Giỏ hàng của bạn còn trống</h2>
             <p className="text-gray-500 mb-6">Hãy chọn thêm sản phẩm để mua sắm nhé</p>
-            <Button 
+            <Button
               onClick={() => navigate('/products')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg"
             >
@@ -192,7 +193,7 @@ const CartPage = () => {
             <div className="bg-white rounded-lg p-4 mb-3 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Checkbox 
+                  <Checkbox
                     checked={selectAll}
                     onCheckedChange={handleSelectAll}
                   />
@@ -220,7 +221,7 @@ const CartPage = () => {
                   <div className="flex gap-4">
                     {/* Checkbox */}
                     <div className="flex-shrink-0 pt-2">
-                      <Checkbox 
+                      <Checkbox
                         checked={selectedItems.has(item.product._id)}
                         onCheckedChange={(checked) => handleSelectItem(item.product._id, checked)}
                       />
@@ -307,20 +308,20 @@ const CartPage = () => {
           <div className="lg:col-span-4">
             <div className="bg-white rounded-lg p-4 shadow-sm sticky top-4">
               <h3 className="font-medium mb-4 text-gray-800">Tóm tắt đơn hàng</h3>
-              
+
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Tạm tính ({selectedTotalItems} sản phẩm)</span>
                   <span>{formatPrice(selectedTotalAmount)}</span>
                 </div>
-                
+
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Phí vận chuyển</span>
                   <span className="text-green-500">Miễn phí</span>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex justify-between font-medium">
                   <span>Tổng thanh toán</span>
                   <span className="text-blue-600 text-lg font-semibold">
@@ -329,7 +330,7 @@ const CartPage = () => {
                 </div>
               </div>
 
-              <Button 
+              <Button
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium mb-3"
                 onClick={handleCheckout}
                 disabled={selectedItems.size === 0}

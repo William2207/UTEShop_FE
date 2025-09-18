@@ -123,6 +123,74 @@ const ProductCard = ({ product }) => {
     );
 };
 
+const Section = ({ title, products, maxCols = 4, viewAllLink, sectionStyle, totalCount, showViewAll }) => {
+    const navigate = useNavigate();
+
+    const getGridCols = () => {
+        switch(maxCols) {
+            case 2: return 'grid-cols-1 md:grid-cols-2';
+            case 3: return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+            case 4: return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
+            default: return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
+        }
+    };
+
+    const getSectionBgColor = () => {
+        switch(sectionStyle) {
+            case 'newest': return 'bg-gradient-to-r from-blue-50 to-indigo-50';
+            case 'bestselling': return 'bg-gradient-to-r from-green-50 to-emerald-50';
+            case 'mostviewed': return 'bg-gradient-to-r from-purple-50 to-pink-50';
+            case 'discount': return 'bg-gradient-to-r from-red-50 to-orange-50';
+            default: return 'bg-gray-50';
+        }
+    };
+
+    const getSectionTitleColor = () => {
+        switch(sectionStyle) {
+            case 'newest': return 'text-blue-700';
+            case 'bestselling': return 'text-green-700';
+            case 'mostviewed': return 'text-purple-700';
+            case 'discount': return 'text-red-700';
+            default: return 'text-gray-700';
+        }
+    };
+
+    if (!products || products.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className={`rounded-xl p-6 ${getSectionBgColor()}`}>
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h2 className={`text-2xl font-bold ${getSectionTitleColor()}`}>
+                        {title}
+                    </h2>
+                    {totalCount && (
+                        <p className="text-sm text-gray-600 mt-1">
+                            {totalCount} sản phẩm có sẵn
+                        </p>
+                    )}
+                </div>
+                {showViewAll && viewAllLink && (
+                    <button
+                        onClick={() => navigate(viewAllLink)}
+                        className="px-4 py-2 bg-white text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors duration-200 text-sm font-medium"
+                    >
+                        Xem tất cả
+                    </button>
+                )}
+            </div>
+
+            <div className={`grid ${getGridCols()} gap-4`}>
+                {products.map((product) => (
+                    <ProductCard key={product._id} product={product} />
+                ))}
+            </div>
+        </div>
+    );
+};
+
 const HomePage = () => {
     const [blocks, setBlocks] = useState(null);
     const [totals, setTotals] = useState(null);
@@ -136,14 +204,15 @@ const HomePage = () => {
                 setError(null);
                 const res = await axios.get("/products/home-blocks");
                 
-                // Ghi log để debug
+                // Log để debug
                 console.log("API Response:", res.data);
+                console.log("Totals:", res.data.totals);
                 
                 setBlocks(res.data);
                 setTotals(res.data.totals);
             } catch (err) {
                 console.error("Lỗi khi lấy home blocks:", err);
-                // Ghi log chi tiết lỗi để dễ dàng sửa chữa
+                // Log chi tiết lỗi
                 console.error("Error Details:", err.response?.data || err.message);
                 setError(err.response?.data?.message || "Không thể tải dữ liệu sản phẩm");
             } finally {
@@ -175,7 +244,7 @@ const HomePage = () => {
         );
     }
 
-    // Hiển thị thông báo nếu không có sản phẩm, thân thiện hơn với người dùng
+    // Hiển thị thông báo nếu không có sản phẩm
     if (!blocks || Object.keys(blocks).length === 0) {
         return (
             <div className="text-center py-8">
@@ -245,74 +314,6 @@ const HomePage = () => {
                     showViewAll={true}
                 />
             )}
-        </div>
-    );
-};
-
-const Section = ({ title, products, maxCols = 4, viewAllLink, sectionStyle, totalCount, showViewAll }) => {
-    const navigate = useNavigate();
-
-    const getGridCols = () => {
-        switch(maxCols) {
-            case 2: return 'grid-cols-1 md:grid-cols-2';
-            case 3: return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
-            case 4: return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
-            default: return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
-        }
-    };
-
-    const getSectionBgColor = () => {
-        switch(sectionStyle) {
-            case 'newest': return 'bg-gradient-to-r from-blue-50 to-indigo-50';
-            case 'bestselling': return 'bg-gradient-to-r from-green-50 to-emerald-50';
-            case 'mostviewed': return 'bg-gradient-to-r from-purple-50 to-pink-50';
-            case 'discount': return 'bg-gradient-to-r from-red-50 to-orange-50';
-            default: return 'bg-gray-50';
-        }
-    };
-
-    const getSectionTitleColor = () => {
-        switch(sectionStyle) {
-            case 'newest': return 'text-blue-700';
-            case 'bestselling': return 'text-green-700';
-            case 'mostviewed': return 'text-purple-700';
-            case 'discount': return 'text-red-700';
-            default: return 'text-gray-700';
-        }
-    };
-
-    if (!products || products.length === 0) {
-        return null;
-    }
-
-    return (
-        <div className={`rounded-xl p-6 ${getSectionBgColor()}`}>
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h2 className={`text-2xl font-bold ${getSectionTitleColor()}`}>
-                        {title}
-                    </h2>
-                    {totalCount && (
-                        <p className="text-sm text-gray-600 mt-1">
-                            {totalCount} sản phẩm có sẵn
-                        </p>
-                    )}
-                </div>
-                {showViewAll && viewAllLink && (
-                    <button
-                        onClick={() => navigate(viewAllLink)}
-                        className="px-4 py-2 bg-white text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors duration-200 text-sm font-medium"
-                    >
-                        Xem tất cả
-                    </button>
-                )}
-            </div>
-
-            <div className={`grid ${getGridCols()} gap-4`}>
-                {products.map((product) => (
-                    <ProductCard key={product._id} product={product} />
-                ))}
-            </div>
         </div>
     );
 };

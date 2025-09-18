@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { createOrder } from '../features/order/orderSlice';
+import { updateUserProfile } from '../features/auth/authSlice';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
+import PaymentMethod from '../components/PaymentMethod';
+import MoMoPaymentForm from '../components/MoMoPaymentForm';
+import api from '../api/axiosConfig';
 
 const CheckoutPage = () => {
     const dispatch = useDispatch();
@@ -17,8 +21,43 @@ const CheckoutPage = () => {
     const [quantity, setQuantity] = useState(1);
     const [shippingAddress, setShippingAddress] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState('MOMO');
+    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+    const [paymentError, setPaymentError] = useState('');
+
+    // Fetch thông tin user mới nhất từ API
+    useEffect(() => {
+        const fetchUserProfile = async () => {
+            if (user) {
+                try {
+                    const response = await api.get('/user/profile');
+                    // Cập nhật Redux store với thông tin mới nhất
+                    dispatch(updateUserProfile(response.data));
+                } catch (error) {
+                    console.error('Lỗi khi fetch thông tin user:', error);
+                }
+            }
+        };
+
+        fetchUserProfile();
+    }, [dispatch, user]);
 
     useEffect(() => {
+        // Xóa URL parameters nếu có (để tránh xử lý callback ở đây)
+        const urlParams = new URLSearchParams(window.location.search);
+        console.log('🔍 CheckoutPage - Current URL params:', Object.fromEntries(urlParams));
+
+        if (urlParams.get('partnerCode') === 'MOMO') {
+            console.log('🎯 CheckoutPage - Detected MoMo callback, redirecting to PaymentSuccessPage');
+            // Redirect đến PaymentSuccessPage nếu có callback từ MoMo
+            const currentUrl = new URL(window.location);
+            const successUrl = `/payment/success${currentUrl.search}`;
+            console.log('🚀 CheckoutPage - Redirecting to:', successUrl);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            navigate(successUrl);
+            return;
+        }
+
         // Kiểm tra xem có thông tin sản phẩm được truyền không
         const state = location.state;
         if (!state || !state.product) {
@@ -48,8 +87,25 @@ const CheckoutPage = () => {
         if (user?.phone) {
             setPhoneNumber(user.phone);
         }
-    }, [location, user, navigate]);
+    }, [location, user, navigate, dispatch]);
 
+    // Tính tổng giá
+    const calculateTotalPrice = () => {
+        const subtotal = productDetails?.price * quantity || 0;
+        const discountAmount = productDetails?.discountPercentage > 0
+            ? subtotal * productDetails.discountPercentage / 100
+            : 0;
+        //const deliveryFee = paymentMethod === 'COD' ? 15000 : 0; // Miễn phí ship cho thanh toán online
+        return subtotal - discountAmount;
+    };
+
+    // Xử lý lỗi thanh toán MoMo
+    const handleMoMoPaymentError = (error) => {
+        setPaymentError(error);
+        setIsProcessingPayment(false);
+    };
+
+    // Xử lý đặt hàng COD
     const handleCreateOrder = async () => {
         // Kiểm tra địa chỉ
         if (!shippingAddress.trim()) {
@@ -63,51 +119,26 @@ const CheckoutPage = () => {
             return;
         }
 
-        // Tính tổng giá với discount và phí ship
-        const subtotal = productDetails.price * quantity;
-        const discountAmount = productDetails.discountPercentage > 0
-            ? subtotal * productDetails.discountPercentage / 100
-            : 0;
-        const deliveryFee = 15000;
-        const totalPrice = subtotal - discountAmount + deliveryFee;
+        // Nếu là thanh toán MoMo, không xử lý ở đây
+        if (paymentMethod === 'MOMO') {
+            return;
+        }
+
+        setIsProcessingPayment(true);
+        setPaymentError('');
 
         try {
-            // Xử lý an toàn để lấy user ID
-            let userId = null;
-
-            // Nếu user là object và có _id
-            if (user && typeof user === 'object' && user._id) {
-                userId = user._id;
-            }
-            // Nếu user là string (ID)
-            else if (typeof user === 'string') {
-                userId = user;
-            }
-            // Nếu user là object nhưng không có _id, thử lấy ID từ các key khác
-            else if (user && typeof user === 'object') {
-                const idKeys = ['id', 'userId', '_id'];
-                for (let key of idKeys) {
-                    if (user[key]) {
-                        userId = user[key];
-                        break;
-                    }
-                }
-            }
-
-            if (!userId) {
-                throw new Error('Không thể xác định ID người dùng. Vui lòng đăng nhập lại.');
-            }
+            const totalPrice = calculateTotalPrice();
 
             const orderData = {
-                // Không gửi user ID trong body - backend sẽ lấy từ token
                 items: [{
                     product: productDetails._id,
                     quantity: quantity,
                     price: productDetails.price
                 }],
-                totalPrice, // Thêm tổng giá
+                totalPrice,
                 shippingAddress,
-                paymentMethod: 'COD',
+                paymentMethod: paymentMethod,
                 codDetails: {
                     phoneNumberConfirmed: false,
                     additionalNotes: `Thanh toán cho sản phẩm: ${productDetails.name}`
@@ -130,8 +161,10 @@ const CheckoutPage = () => {
             } else if (error?.code === 'NO_ADDRESS') {
                 alert('Vui lòng nhập địa chỉ giao hàng.');
             } else {
-                alert(error?.message || 'Đặt hàng thất bại. Vui lòng thử lại.');
+                setPaymentError(error?.message || 'Đặt hàng thất bại. Vui lòng thử lại.');
             }
+        } finally {
+            setIsProcessingPayment(false);
         }
     };
 
@@ -184,17 +217,25 @@ const CheckoutPage = () => {
                                         <span>-{Math.round(productDetails.price * quantity * productDetails.discountPercentage / 100).toLocaleString()}₫</span>
                                     </div>
                                 )}
-
+                                {/*
                                 <hr />
+                                {paymentMethod === 'COD' && (
+                                    <div className="flex justify-between">
+                                        <span>Phí giao hàng</span>
+                                        <span>15,000₫</span>
+                                    </div>
+                                )}
+                                {paymentMethod !== 'COD' && (
+                                    <div className="flex justify-between text-green-600">
+                                        <span>Phí giao hàng</span>
+                                        <span>Miễn phí</span>
+                                    </div>
+                                )}
+                                <hr />
+                                */}
                                 <div className="flex justify-between font-bold text-lg">
                                     <span>Total</span>
-                                    <span>{(() => {
-                                        const discountAmount = productDetails.discountPercentage > 0
-                                            ? productDetails.price * quantity * productDetails.discountPercentage / 100
-                                            : 0;
-                                        const finalTotal = (productDetails.price * quantity) - discountAmount;
-                                        return Math.round(finalTotal).toLocaleString();
-                                    })()}₫</span>
+                                    <span>{calculateTotalPrice()?.toLocaleString()}₫</span>
                                 </div>
                             </div>
                         </div>
@@ -232,19 +273,52 @@ const CheckoutPage = () => {
 
                         {/* Phương thức thanh toán */}
                         <div className="mb-6">
-                            <label className="block mb-2 font-medium">Phương Thức Thanh Toán</label>
-                            <div className="bg-gray-100 p-3 rounded">
-                                <span>Thanh toán khi nhận hàng (COD)</span>
-                            </div>
+                            <PaymentMethod
+                                selectedMethod={paymentMethod}
+                                onMethodChange={setPaymentMethod}
+                                disabled={isProcessingPayment}
+                            />
                         </div>
 
-                        {/* Nút đặt hàng */}
-                        <Button
-                            onClick={handleCreateOrder}
-                            className="w-full bg-black text-white hover:bg-gray-800 py-3"
-                        >
-                            Go to Checkout →
-                        </Button>
+                        {/* Hiển thị lỗi thanh toán */}
+                        {paymentError && (
+                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700">
+                                {paymentError}
+                            </div>
+                        )}
+
+                        {/* Form thanh toán MoMo */}
+                        {paymentMethod === 'MOMO' && (
+                            <div className="mb-6">
+                                <MoMoPaymentForm
+                                    amount={calculateTotalPrice()}
+                                    orderInfo={`Thanh toán cho sản phẩm: ${productDetails.name}`}
+                                    onError={handleMoMoPaymentError}
+                                    disabled={isProcessingPayment || !shippingAddress.trim() || !phoneNumber.trim()}
+                                    productDetails={productDetails}
+                                    quantity={quantity}
+                                    shippingAddress={shippingAddress}
+                                />
+                            </div>
+                        )}
+
+                        {/* Nút đặt hàng cho COD */}
+                        {paymentMethod !== 'MOMO' && (
+                            <Button
+                                onClick={handleCreateOrder}
+                                disabled={isProcessingPayment}
+                                className="w-full bg-black text-white hover:bg-gray-800 py-3"
+                            >
+                                {isProcessingPayment ? (
+                                    <div className="flex items-center space-x-2">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        <span>Đang xử lý...</span>
+                                    </div>
+                                ) : (
+                                    'Đặt hàng →'
+                                )}
+                            </Button>
+                        )}
                     </div>
                 </Card>
             </div>

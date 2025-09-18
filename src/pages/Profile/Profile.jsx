@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useDispatch } from "react-redux";
 import api from "@/api/axiosConfig";
 import {
   Card,
@@ -16,7 +17,9 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, MapPin, Edit, Trash2, Plus, Lock } from "lucide-react";
 import { useEffect } from "react";
+import { updateUserProfile } from "@/features/auth/authSlice";
 function UserProfile() {
+  const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("personal");
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -98,6 +101,9 @@ function UserProfile() {
       // Cập nhật lại state `userInfo` với dữ liệu mới nhất từ server
       setUserInfo(response.data);
 
+      // Cập nhật Redux store với thông tin mới
+      dispatch(updateUserProfile(response.data));
+
       // Thông báo thành công
       alert("Cập nhật thông tin thành công!");
     } catch (err) {
@@ -130,6 +136,10 @@ function UserProfile() {
     try {
       const response = await api.put("/user/profile", payload);
       setUserInfo(response.data); // Cập nhật lại toàn bộ userInfo
+
+      // Cập nhật Redux store với thông tin mới
+      dispatch(updateUserProfile(response.data));
+
       setIsEditingAddress(false); // Quay lại chế độ hiển thị
       alert("Cập nhật địa chỉ thành công!");
     } catch (err) {
@@ -168,6 +178,10 @@ function UserProfile() {
 
       // Cập nhật UI với dữ liệu mới từ server
       setUserInfo(response.data);
+
+      // Cập nhật Redux store với thông tin mới
+      dispatch(updateUserProfile(response.data));
+
       alert("Cập nhật avatar thành công!");
     } catch (err) {
       console.error("Lỗi khi upload avatar:", err);
@@ -238,11 +252,10 @@ function UserProfile() {
             {/* === PHẦN AVATAR ĐƠN GIẢN HÓA === */}
             <div className="relative">
               <Avatar
-                className={`h-20 w-20 ${
-                  isUploadingAvatar
+                className={`h-20 w-20 ${isUploadingAvatar
                     ? "opacity-50 cursor-not-allowed"
                     : "cursor-pointer"
-                }`}
+                  }`}
                 onClick={handleAvatarClick}
               >
                 <AvatarImage
