@@ -32,17 +32,20 @@ const CartPage = () => {
     }
   }, [dispatch, user]);
 
-  // Tự động chọn tất cả sản phẩm khi load giỏ hàng
+  // Loại bỏ việc tự động chọn tất cả sản phẩm khi load giỏ hàng
   useEffect(() => {
     if (items && items.length > 0) {
-      const allItemIds = new Set(items.map(item => item.product._id));
-      setSelectedItems(allItemIds);
-      setSelectAll(true);
+      // Chỉ reset nếu selectedItems rỗng
+      if (selectedItems.size === 0) {
+        setSelectAll(false);
+      }
     }
   }, [items]);
 
   const handleQuantityChange = (productId, newQuantity) => {
     if (newQuantity < 1) return;
+    
+    // Nếu sản phẩm đã được chọn, giữ nguyên trạng thái chọn
     dispatch(updateCartItem({ productId, quantity: newQuantity }));
   };
 
@@ -211,7 +214,10 @@ const CartPage = () => {
             {/* Product List */}
             <div className="space-y-3">
               {items.map((item) => (
-                <div key={item.product._id} className="bg-white rounded-lg p-4 shadow-sm">
+                <div 
+                  key={item.product._id} 
+                  className="bg-white rounded-lg p-4 shadow-sm"
+                >
                   <div className="flex gap-4">
                     {/* Checkbox */}
                     <div className="flex-shrink-0 pt-2">

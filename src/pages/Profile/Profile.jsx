@@ -18,7 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, MapPin, Edit, Trash2, Plus, Lock } from "lucide-react";
 import { useEffect } from "react";
 import { updateUserProfile } from "@/features/auth/authSlice";
-export function UserProfile() {
+function UserProfile() {
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("personal");
   const [userInfo, setUserInfo] = useState(null);
@@ -550,3 +550,5 @@ export function UserProfile() {
     </div>
   );
 }
+
+export default UserProfile;
