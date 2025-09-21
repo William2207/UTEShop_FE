@@ -2,7 +2,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate, useLocation } from 'react-router-dom';
 
-const PrivateRoute = ({ children }) => {
+const PrivateRoute = ({ children, requireAdmin = false }) => {
   const { user, token } = useSelector((state) => state.auth);
   const location = useLocation();
 
@@ -15,7 +15,15 @@ const PrivateRoute = ({ children }) => {
     />;
   }
 
-  // Nếu đã đăng nhập, hiển thị component con
+  // Nếu yêu cầu quyền admin nhưng user không phải admin
+  if (requireAdmin && user?.role !== 'admin') {
+    return <Navigate 
+      to="/" 
+      replace 
+    />;
+  }
+
+  // Nếu đã đăng nhập (và có quyền admin nếu cần), hiển thị component con
   return children;
 };
 

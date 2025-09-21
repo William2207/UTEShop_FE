@@ -28,7 +28,15 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { OrderTracking } from "./pages/Profile/orderTracking";
 import { PurchaseHistory } from "./pages/Profile/purchaseHistory";
 
+// Admin components
+import AdminLogin from "./pages/Admin/AdminLogin";
+import AdminLayout from "./layouts/AdminLayout";
+import Dashboard from "./pages/Admin/Dashboard";
+import VoucherManagement from "./pages/Admin/VoucherManagement";
+import PointsManagement from "./pages/Admin/PointsManagement";
+
 import PrivateRoute from "./components/utils/PrivateRoute";
+import AdminRoute from "./components/utils/AdminRoute";
 Modal.setAppElement("#root");
 
 function App() {
@@ -86,6 +94,21 @@ function App() {
                 </PrivateRoute>
               }
             />
+          </Route>
+
+          {/* Admin Routes */}
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="vouchers" element={<VoucherManagement />} />
+            <Route path="points" element={<PointsManagement />} />
+            {/* Add more admin routes here as needed */}
           </Route>
         </Routes>
       </Router>
