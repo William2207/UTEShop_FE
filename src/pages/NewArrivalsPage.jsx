@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/axiosConfig";
-import { formatPrice } from '../utils/formatPrice';
-import { ShoppingCart } from "lucide-react";
-import FavoriteButton from "../components/FavoriteButton";
+import ProductCard from "../components/ProductCard";
 
 
 const NewArrivalsPage = () => {
@@ -89,91 +87,5 @@ const NewArrivalsPage = () => {
     );
 };
 
-const ProductCard = ({ product }) => {
-    const originalPrice = product.price;
-    const discountedPrice = product.discountPercentage > 0
-        ? originalPrice * (1 - product.discountPercentage / 100)
-        : originalPrice;
-
-    return (
-        <div
-            className="group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
-        >
-            {/* Image Container */}
-            <div className="relative overflow-hidden">
-                <img
-                    src={product.images?.[0] || "https://via.placeholder.com/300x200?text=No+Image"}
-                    alt={product.name}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-
-                {/* Discount Badge */}
-                {product.discountPercentage > 0 && (
-                    <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                        -{product.discountPercentage}%
-                    </div>
-                )}
-
-                {/* Brand Badge */}
-                {product.brand && (
-                    <div className="absolute top-2 right-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                        {product.brand.name}
-                    </div>
-                )}
-
-            </div>
-
-            {/* Content */}
-            <div className="p-4">
-                <h3 className="font-semibold text-gray-800 text-sm line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
-                    {product.name}
-                </h3>
-
-                {/* Price */}
-                <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg font-bold text-red-600">
-                        {formatPrice(discountedPrice)}
-                    </span>
-                    {product.discountPercentage > 0 && (
-                        <span className="text-sm text-gray-500 line-through">
-                            {formatPrice(originalPrice)}
-                        </span>
-                    )}
-                </div>
-
-                {/* Stats */}
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>Đã bán: {product.soldCount || 0}</span>
-                    <span>Lượt xem: {product.viewCount || 0}</span>
-                </div>
-
-                {/* Stock Status and Favorite */}
-                <div className="mt-2 flex items-center justify-between">
-                    {product.stock > 0 ? (
-                        <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
-                            Còn {product.stock} sản phẩm
-                        </span>
-                    ) : (
-                        <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full">
-                            Hết hàng
-                        </span>
-                    )}
-                    <FavoriteButton productId={product._id} size="small" />
-                </div>
-
-                {/* Buy Button */}
-                <div className="mt-3">
-                    <button
-                        onClick={() => window.location.href = `/products/${product._id}`}
-                        className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
-                    >
-                        <ShoppingCart className="w-4 h-4" />
-                        Xem chi tiết
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 export default NewArrivalsPage;

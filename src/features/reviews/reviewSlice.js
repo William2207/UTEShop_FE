@@ -156,6 +156,11 @@ const reviewSlice = createSlice({
                 if (index !== -1) {
                     state.reviews[index] = action.payload.review;
                 }
+                // Cập nhật stats nếu có trong response
+                if (action.payload.stats) {
+                    state.stats = action.payload.stats;
+                    console.log('📊 Redux: Updated review stats after edit:', action.payload.stats);
+                }
             })
             .addCase(updateReviewAsync.rejected, (state, action) => {
                 state.loading = false;
@@ -172,6 +177,11 @@ const reviewSlice = createSlice({
                 state.userReview = null;
                 state.reviews = state.reviews.filter(r => r._id !== reviewId);
                 state.total -= 1;
+                // Cập nhật stats nếu có trong response
+                if (action.payload.stats) {
+                    state.stats = action.payload.stats;
+                    console.log('📊 Redux: Updated review stats after delete:', action.payload.stats);
+                }
             })
             .addCase(deleteReviewAsync.rejected, (state, action) => {
                 state.loading = false;
