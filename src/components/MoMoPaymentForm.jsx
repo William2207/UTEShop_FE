@@ -10,8 +10,12 @@ const MoMoPaymentForm = ({
     onError,
     disabled = false,
     productDetails,
+    cartItems,
+    isFromCart,
     quantity,
-    shippingAddress
+    customerName,
+    shippingAddress,
+    phoneNumber
 }) => {
     const navigate = useNavigate();
     const [isProcessing, setIsProcessing] = useState(false);
@@ -49,8 +53,12 @@ const MoMoPaymentForm = ({
                     requestId: response.data.requestId,
                     timestamp: Date.now(),
                     productDetails: productDetails,
+                    cartItems: cartItems,
+                    isFromCart: isFromCart,
                     quantity: quantity,
-                    shippingAddress: shippingAddress
+                    customerName: customerName,
+                    shippingAddress: shippingAddress,
+                    phoneNumber: phoneNumber
                 }));
 
                 // Mở popup MoMo
@@ -121,29 +129,58 @@ const MoMoPaymentForm = ({
 
     const createOrderAfterPayment = async (momoOrderId, momoRequestId) => {
         try {
+            console.log('📦 Creating order with isFromCart:', isFromCart);
+            console.log('📦 Creating order with cartItems:', cartItems);
             console.log('📦 Creating order with productDetails:', productDetails);
-            console.log('📦 Creating order with quantity:', quantity);
-            console.log('📦 Creating order with shippingAddress:', shippingAddress);
 
-            // Tính tổng giá
-            const subtotal = productDetails.price * quantity;
-            const discountAmount = productDetails.discountPercentage > 0
-                ? subtotal * productDetails.discountPercentage / 100
-                : 0;
-            const totalPrice = subtotal - discountAmount;
+            let orderData;
+            if (isFromCart && cartItems && cartItems.length > 0) {
+                // Tạo đơn hàng từ giỏ hàng
+                const totalPrice = cartItems.reduce((total, item) => {
+                    const itemPrice = item.product.price * item.quantity;
+                    const discountAmount = item.product.discountPercentage > 0
+                        ? itemPrice * item.product.discountPercentage / 100
+                        : 0;
+                    return total + (itemPrice - discountAmount);
+                }, 0);
 
-            const orderData = {
-                items: [{
-                    product: productDetails._id,
-                    quantity: quantity,
-                    price: productDetails.price
-                }],
-                totalPrice,
-                shippingAddress: shippingAddress || 'Địa chỉ chưa cập nhật',
-                paymentMethod: 'MOMO',
-                momoOrderId: momoOrderId,
-                momoRequestId: momoRequestId,
-            };
+                orderData = {
+                    items: cartItems.map(item => ({
+                        product: item.product._id,
+                        quantity: item.quantity,
+                        price: item.product.price
+                    })),
+                    totalPrice,
+                    customerName: customerName || 'Tên chưa cập nhật',
+                    shippingAddress: shippingAddress || 'Địa chỉ chưa cập nhật',
+                    phoneNumber: phoneNumber || 'Số điện thoại chưa cập nhật',
+                    paymentMethod: 'MOMO',
+                    momoOrderId: momoOrderId,
+                    momoRequestId: momoRequestId,
+                };
+            } else {
+                // Tạo đơn hàng từ sản phẩm đơn lẻ
+                const subtotal = productDetails.price * quantity;
+                const discountAmount = productDetails.discountPercentage > 0
+                    ? subtotal * productDetails.discountPercentage / 100
+                    : 0;
+                const totalPrice = subtotal - discountAmount;
+
+                orderData = {
+                    items: [{
+                        product: productDetails._id,
+                        quantity: quantity,
+                        price: productDetails.price
+                    }],
+                    totalPrice,
+                    customerName: customerName || 'Tên chưa cập nhật',
+                    shippingAddress: shippingAddress || 'Địa chỉ chưa cập nhật',
+                    phoneNumber: phoneNumber || 'Số điện thoại chưa cập nhật',
+                    paymentMethod: 'MOMO',
+                    momoOrderId: momoOrderId,
+                    momoRequestId: momoRequestId,
+                };
+            }
 
             console.log('📤 Sending order data:', orderData);
 

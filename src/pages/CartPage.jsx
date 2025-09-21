@@ -44,7 +44,7 @@ const CartPage = () => {
 
   const handleQuantityChange = (productId, newQuantity) => {
     if (newQuantity < 1) return;
-    
+
     // Nếu sản phẩm đã được chọn, giữ nguyên trạng thái chọn
     dispatch(updateCartItem({ productId, quantity: newQuantity }));
   };
@@ -70,7 +70,17 @@ const CartPage = () => {
       alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán');
       return;
     }
-    navigate('/checkout');
+
+    // Lấy thông tin các sản phẩm được chọn
+    const selectedProducts = items.filter(item => selectedItems.has(item.product._id));
+
+    // Chuyển đến trang checkout với thông tin sản phẩm từ giỏ hàng
+    navigate('/checkout', {
+      state: {
+        cartItems: selectedProducts,
+        fromCart: true
+      }
+    });
   };
 
 
@@ -100,7 +110,13 @@ const CartPage = () => {
   // Tính toán cho các sản phẩm được chọn
   const selectedItemsData = items.filter(item => selectedItems.has(item.product._id));
   const selectedTotalItems = selectedItemsData.reduce((total, item) => total + item.quantity, 0);
-  const selectedTotalAmount = selectedItemsData.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+  const selectedTotalAmount = selectedItemsData.reduce((total, item) => {
+    const itemPrice = item.product.price * item.quantity;
+    const discountAmount = item.product.discountPercentage > 0
+      ? itemPrice * item.product.discountPercentage / 100
+      : 0;
+    return total + (itemPrice - discountAmount);
+  }, 0);
 
   if (!user) {
     return (
@@ -214,8 +230,8 @@ const CartPage = () => {
             {/* Product List */}
             <div className="space-y-3">
               {items.map((item) => (
-                <div 
-                  key={item.product._id} 
+                <div
+                  key={item.product._id}
                   className="bg-white rounded-lg p-4 shadow-sm"
                 >
                   <div className="flex gap-4">
@@ -246,8 +262,16 @@ const CartPage = () => {
                         {/* Price */}
                         <div className="flex items-center gap-2">
                           <span className="text-blue-600 font-semibold">
-                            {formatPrice(item.product.price)}
+                            {formatPrice(item.product.discountPercentage > 0
+                              ? item.product.price - (item.product.price * item.product.discountPercentage / 100)
+                              : item.product.price
+                            )}
                           </span>
+                          {item.product.discountPercentage > 0 && (
+                            <span className="text-sm text-gray-500 line-through">
+                              {formatPrice(item.product.price)}
+                            </span>
+                          )}
                         </div>
 
                         {/* Quantity & Actions */}
@@ -280,7 +304,10 @@ const CartPage = () => {
                           {/* Total Price */}
                           <div className="text-right min-w-[100px]">
                             <p className="text-blue-600 font-semibold">
-                              {formatPrice(item.product.price * item.quantity)}
+                              {formatPrice((item.product.discountPercentage > 0
+                                ? item.product.price - (item.product.price * item.product.discountPercentage / 100)
+                                : item.product.price
+                              ) * item.quantity)}
                             </p>
                           </div>
 
