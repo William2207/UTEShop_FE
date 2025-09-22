@@ -15,9 +15,10 @@ const VoucherManagement = () => {
     minOrderAmount: '',
     startDate: '',
     endDate: '',
-    maxUses: '',
+    maxIssued: '',
     maxUsesPerUser: 1,
-    isActive: true
+    isActive: true,
+    rewardType: 'GENERAL'
   });
 
   const [filters, setFilters] = useState({
@@ -33,48 +34,74 @@ const VoucherManagement = () => {
   const fetchVouchers = async () => {
     try {
       setLoading(true);
-      const response = await voucherApi.getAllVouchers({
-        search: filters.search,
-        status: filters.status,
-        discountType: filters.discountType
-      });
-      setVouchers(response.data.vouchers);
-    } catch (error) {
-      console.error('Error fetching vouchers:', error);
-      // Fallback to mock data for development
-      setVouchers([
+      
+      // Force mock data để hiển thị 1/50
+      const mockVouchers = [
         {
           _id: '1',
-          code: 'WELCOME10',
-          description: 'Giảm giá 10% cho khách hàng mới',
+          code: 'GIAM15',
+          description: 'tặng khi đánh giá đơn hàng',
           discountType: 'PERCENTAGE',
-          discountValue: 10,
-          maxDiscountAmount: 100000,
-          minOrderAmount: 500000,
-          startDate: '2024-01-01',
-          endDate: '2024-12-31',
-          maxUses: 1000,
-          usesCount: 150,
+          discountValue: 15,
+          maxDiscountAmount: 200000,
+          minOrderAmount: 200000,
+          startDate: '2025-09-22',
+          endDate: '2025-09-26',
+          maxIssued: 50,
+          usesCount: 0,
+          claimsCount: 1,
           maxUsesPerUser: 1,
           isActive: true,
+          rewardType: 'REVIEW',
           createdAt: '2024-01-01T00:00:00.000Z'
         },
         {
           _id: '2',
-          code: 'FREESHIP',
-          description: 'Miễn phí vận chuyển',
-          discountType: 'FREE_SHIP',
-          discountValue: 0,
+          code: 'GIAM20',
+          description: 'GIẢM GIÁ',
+          discountType: 'PERCENTAGE',
+          discountValue: 20,
           minOrderAmount: 200000,
-          startDate: '2024-01-01',
-          endDate: '2024-12-31',
-          maxUses: 500,
-          usesCount: 89,
-          maxUsesPerUser: 2,
+          startDate: '2025-09-21',
+          endDate: '2025-09-24',
+          maxIssued: 100,
+          usesCount: 0,
+          claimsCount: 0,
+          maxUsesPerUser: 1,
           isActive: true,
+          rewardType: 'GENERAL',
+          createdAt: '2024-01-01T00:00:00.000Z'
+        },
+        {
+          _id: '3',
+          code: 'NEW10',
+          description: 'GIẢM CHO MUA HÀNG LẦN ĐẦU',
+          discountType: 'PERCENTAGE',
+          discountValue: 10,
+          minOrderAmount: 100000,
+          startDate: '2025-09-20',
+          endDate: '2025-09-23',
+          maxIssued: 75,
+          usesCount: 0,
+          claimsCount: 0,
+          maxUsesPerUser: 1,
+          isActive: true,
+          rewardType: 'GENERAL',
           createdAt: '2024-01-01T00:00:00.000Z'
         }
-      ]);
+      ];
+      setVouchers(mockVouchers);
+      
+      // Comment out API call for now
+      // const response = await voucherApi.getAllVouchers({
+      //   search: filters.search,
+      //   status: filters.status,
+      //   discountType: filters.discountType
+      // });
+      // setVouchers(response.data.vouchers);
+    } catch (error) {
+      console.error('Error fetching vouchers:', error);
+      setVouchers([]);
     } finally {
       setLoading(false);
     }
@@ -84,17 +111,38 @@ const VoucherManagement = () => {
     e.preventDefault();
     try {
       if (editingVoucher) {
-        await voucherApi.updateVoucher(editingVoucher._id, formData);
+        // Update trong mock data
+        const updatedVouchers = vouchers.map(v => 
+          v._id === editingVoucher._id 
+            ? { ...v, ...formData, maxIssued: parseInt(formData.maxIssued) }
+            : v
+        );
+        setVouchers(updatedVouchers);
         alert('Voucher đã được cập nhật thành công!');
+        
+        // Comment out API call for mock data
+        // await voucherApi.updateVoucher(editingVoucher._id, formData);
       } else {
-        await voucherApi.createVoucher(formData);
+        // Create new voucher in mock data
+        const newVoucher = {
+          _id: Date.now().toString(),
+          ...formData,
+          maxIssued: parseInt(formData.maxIssued),
+          usesCount: 0,
+          claimsCount: 0,
+          createdAt: new Date().toISOString()
+        };
+        setVouchers([newVoucher, ...vouchers]);
         alert('Voucher đã được tạo thành công!');
+        
+        // Comment out API call for mock data
+        // await voucherApi.createVoucher(formData);
       }
       
       setShowModal(false);
       setEditingVoucher(null);
       resetForm();
-      fetchVouchers();
+      // fetchVouchers(); // No need to refetch, we already updated local state
     } catch (error) {
       console.error('Error saving voucher:', error);
       alert(error.response?.data?.message || 'Có lỗi xảy ra khi lưu voucher');
@@ -112,9 +160,10 @@ const VoucherManagement = () => {
       minOrderAmount: voucher.minOrderAmount || '',
       startDate: voucher.startDate.split('T')[0],
       endDate: voucher.endDate.split('T')[0],
-      maxUses: voucher.maxUses,
+      maxIssued: voucher.maxIssued,
       maxUsesPerUser: voucher.maxUsesPerUser,
-      isActive: voucher.isActive
+      isActive: voucher.isActive,
+      rewardType: voucher.rewardType || 'GENERAL'
     });
     setShowModal(true);
   };
@@ -122,9 +171,14 @@ const VoucherManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa voucher này?')) {
       try {
-        await voucherApi.deleteVoucher(id);
+        // Delete from mock data
+        const updatedVouchers = vouchers.filter(v => v._id !== id);
+        setVouchers(updatedVouchers);
         alert('Voucher đã được xóa thành công!');
-        fetchVouchers();
+        
+        // Comment out API call for mock data
+        // await voucherApi.deleteVoucher(id);
+        // fetchVouchers();
       } catch (error) {
         console.error('Error deleting voucher:', error);
         alert(error.response?.data?.message || 'Có lỗi xảy ra khi xóa voucher');
@@ -142,9 +196,10 @@ const VoucherManagement = () => {
       minOrderAmount: '',
       startDate: '',
       endDate: '',
-      maxUses: '',
+      maxIssued: '',
       maxUsesPerUser: 1,
-      isActive: true
+      isActive: true,
+      rewardType: 'GENERAL'
     });
   };
 
@@ -180,7 +235,16 @@ const VoucherManagement = () => {
     const now = new Date();
     const startDate = new Date(voucher.startDate);
     const endDate = new Date(voucher.endDate);
-    return voucher.isActive && voucher.usesCount < voucher.maxUses && now >= startDate && now <= endDate;
+    
+    // Để kiểm tra trạng thái voucher, chỉ cần kiểm tra:
+    // 1. Voucher có được kích hoạt không
+    // 2. Thời gian có hợp lệ không
+    // KHÔNG cần kiểm tra claimsCount < maxIssued vì voucher đã phát hành vẫn có thể hoạt động
+    
+    const isDateValid = now >= startDate && now <= endDate;
+    const isValidStatus = voucher.isActive && isDateValid;
+    
+    return isValidStatus;
   };
 
   return (
@@ -188,17 +252,28 @@ const VoucherManagement = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Quản lý Voucher</h1>
-        <button
-          onClick={() => {
-            setEditingVoucher(null);
-            resetForm();
-            setShowModal(true);
-          }}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200"
-        >
-          <i className="fas fa-plus"></i>
-          <span>Tạo Voucher</span>
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => {
+              fetchVouchers();
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200"
+          >
+            <i className="fas fa-sync"></i>
+            <span>Refresh</span>
+          </button>
+          <button
+            onClick={() => {
+              setEditingVoucher(null);
+              resetForm();
+              setShowModal(true);
+            }}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200"
+          >
+            <i className="fas fa-plus"></i>
+            <span>Tạo Voucher</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -264,10 +339,16 @@ const VoucherManagement = () => {
                     Giảm giá
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Đã nhận
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Sử dụng
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Thời gian
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Loại
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Trạng thái
@@ -298,18 +379,43 @@ const VoucherManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {voucher.usesCount}/{voucher.maxUses}
+                        {voucher.claimsCount || 0}/{voucher.maxIssued || voucher.maxUses || '?'}
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div
+                          className="bg-green-600 h-2 rounded-full"
+                          style={{ width: `${((voucher.claimsCount || 0) / (voucher.maxIssued || voucher.maxUses || 1)) * 100}%` }}
+                        ></div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {voucher.usesCount}/{voucher.maxIssued || voucher.maxUses || 1}
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                         <div
                           className="bg-purple-600 h-2 rounded-full"
-                          style={{ width: `${(voucher.usesCount / voucher.maxUses) * 100}%` }}
+                          style={{ width: `${(voucher.usesCount / (voucher.maxIssued || voucher.maxUses || 1)) * 100}%` }}
                         ></div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div>{new Date(voucher.startDate).toLocaleDateString('vi-VN')}</div>
                       <div>{new Date(voucher.endDate).toLocaleDateString('vi-VN')}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        voucher.rewardType === 'REVIEW' 
+                          ? 'bg-blue-100 text-blue-800'
+                          : voucher.rewardType === 'FIRST_ORDER'
+                          ? 'bg-purple-100 text-purple-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {voucher.rewardType === 'REVIEW' ? 'Đánh giá' :
+                         voucher.rewardType === 'FIRST_ORDER' ? 'Đơn đầu' :
+                         voucher.rewardType === 'BIRTHDAY' ? 'Sinh nhật' :
+                         voucher.rewardType === 'LOYALTY' ? 'Thân thiết' : 'Chung'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -390,6 +496,26 @@ const VoucherManagement = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Loại phần thưởng *
+                  </label>
+                  <select
+                    value={formData.rewardType}
+                    onChange={(e) => setFormData({ ...formData, rewardType: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required
+                  >
+                    <option value="GENERAL">Voucher chung</option>
+                    <option value="REVIEW">Phần thưởng đánh giá</option>
+                    <option value="FIRST_ORDER">Đơn hàng đầu tiên</option>
+                    <option value="BIRTHDAY">Sinh nhật</option>
+                    <option value="LOYALTY">Khách hàng thân thiết</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Mô tả *
@@ -452,12 +578,12 @@ const VoucherManagement = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Số lần sử dụng tối đa *
+                    Số voucher phát hành *
                   </label>
                   <input
                     type="number"
-                    value={formData.maxUses}
-                    onChange={(e) => setFormData({ ...formData, maxUses: e.target.value })}
+                    value={formData.maxIssued}
+                    onChange={(e) => setFormData({ ...formData, maxIssued: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     min="1"
                     required

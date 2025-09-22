@@ -81,14 +81,12 @@ const ReviewSection = ({
       setComment("");
       setRating(5);
 
-  
       if (onReviewChange) {
         onReviewChange();
       }
       if (orderId && onOrderReviewed) {
         onOrderReviewed(orderId);
       }
-
 
       // window.location.reload();
       if (resultPayload.rewards && resultPayload.rewards.length > 0) {
@@ -249,12 +247,51 @@ const ReviewSection = ({
           {rewards.map((reward, index) => (
             <div
               key={index}
-              className="flex justify-between items-center p-3 border rounded-md"
+              className="p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200"
             >
-              <p>{reward.description}</p>
-              <Button size="sm" onClick={() => handleClaimReward(reward)}>
-                Chọn
-              </Button>
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-800 mb-2">
+                    {reward.type === 'VOUCHER' ? '🎟️ Voucher Giảm Giá' : '💎 Điểm Tích Lũy'}
+                  </h3>
+                  <p className="text-gray-600 mb-2">{reward.description}</p>
+                  
+                  {reward.type === 'VOUCHER' && (
+                    <div className="space-y-1 text-sm text-gray-500">
+                      <div>📋 Mã: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{reward.voucherCode}</span></div>
+                      {reward.discountType === 'PERCENTAGE' && (
+                        <div>💰 Giảm: {reward.discountValue}%</div>
+                      )}
+                      {reward.discountType === 'FIXED_AMOUNT' && (
+                        <div>💰 Giảm: {reward.discountValue?.toLocaleString()}₫</div>
+                      )}
+                      {reward.discountType === 'FREE_SHIP' && (
+                        <div>🚚 Miễn phí vận chuyển</div>
+                      )}
+                      {reward.minOrderAmount > 0 && (
+                        <div>📦 Đơn tối thiểu: {reward.minOrderAmount?.toLocaleString()}₫</div>
+                      )}
+                      {reward.endDate && (
+                        <div>⏰ Hạn đến: {new Date(reward.endDate).toLocaleDateString('vi-VN')}</div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {reward.type === 'POINTS' && (
+                    <div className="text-sm text-gray-500">
+                      💎 Nhận ngay {reward.value} điểm tích lũy
+                    </div>
+                  )}
+                </div>
+                
+                <Button 
+                  size="sm" 
+                  onClick={() => handleClaimReward(reward)}
+                  className="ml-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                >
+                  Nhận
+                </Button>
+              </div>
             </div>
           ))}
         </div>
