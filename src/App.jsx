@@ -18,7 +18,6 @@ import NewArrivalsPage from './pages/NewArrivalsPage';
 import OrderPage from './pages/OrderPage';
 import CheckoutPage from './pages/CheckoutPage';
 
-import PaymentTestPage from "./pages/PaymentTestPage";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import PaymentFailurePage from "./pages/PaymentFailurePage";
 import FavoritesPage from "./pages/FavoritesPage";
@@ -34,6 +33,9 @@ import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/Admin/Dashboard";
 import VoucherManagement from "./pages/Admin/VoucherManagement";
 import PointsManagement from "./pages/Admin/PointsManagement";
+import CategoryManagement from "./pages/Admin/CategoryManagement";
+import BrandManagement from "./pages/Admin/BrandManagement";
+import ProductManagement from "./pages/Admin/ProductManagement";
 
 import PrivateRoute from "./components/utils/PrivateRoute";
 import AdminRoute from "./components/utils/AdminRoute";
@@ -59,7 +61,6 @@ function App() {
             <Route path="cart" element={<CartPage />} />
             <Route path="checkout" element={<CheckoutPage />} />
 
-            <Route path="payment-test" element={<PaymentTestPage />} />
             <Route path="payment/success" element={<PaymentSuccessPage />} />
             <Route path="payment/failure" element={<PaymentFailurePage />} />
 
@@ -108,7 +109,15 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="vouchers" element={<VoucherManagement />} />
             <Route path="points" element={<PointsManagement />} />
-            {/* Add more admin routes here as needed */}
+
+            {/* Category Management Routes */}
+            <Route path="categories/level-1" element={<CategoryManagement />} />
+
+            {/* Brand Management Route */}
+            <Route path="brands" element={<BrandManagement />} />
+
+            {/* Product Management Route */}
+            <Route path="products" element={<ProductManagement />} />
           </Route>
         </Routes>
       </Router>
