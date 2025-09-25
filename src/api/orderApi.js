@@ -20,9 +20,9 @@ export const orderApi = {
     return response.data;
   },
 
-  // Update order status
-  updateOrderStatus: async (orderId, status) => {
-    const response = await api.put(`/orders/admin/${orderId}/status`, { status });
+  // Update order status and payment status
+  updateOrderStatus: async (orderId, updateData) => {
+    const response = await api.put(`/orders/admin/${orderId}/status`, updateData);
     return response.data;
   },
 

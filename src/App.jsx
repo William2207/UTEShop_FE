@@ -35,6 +35,7 @@ import Dashboard from "./pages/Admin/Dashboard";
 import VoucherManagement from "./pages/Admin/VoucherManagement";
 import PointsManagement from "./pages/Admin/PointsManagement";
 import OrderManagement from "./pages/Admin/OrderManagement";
+import OrderDetailManagement from "./pages/Admin/OrderDetailManagement";
 
 import PrivateRoute from "./components/utils/PrivateRoute";
 import AdminRoute from "./components/utils/AdminRoute";
@@ -108,6 +109,7 @@ function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="orders" element={<OrderManagement />} />
+            <Route path="orders/:orderId" element={<OrderDetailManagement />} />
             <Route path="vouchers" element={<VoucherManagement />} />
             <Route path="points" element={<PointsManagement />} />
             {/* Add more admin routes here as needed */}

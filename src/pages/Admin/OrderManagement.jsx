@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Package, Truck, CheckCircle, XCircle, Clock, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Package, Truck, CheckCircle, XCircle, Clock, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 import { orderApi } from '../../api/orderApi';
 
 const OrderManagement = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -16,15 +18,16 @@ const OrderManagement = () => {
   const [stats, setStats] = useState({
     totalOrders: 0,
     pendingOrders: 0,
+    processingOrders: 0,
     deliveredOrders: 0,
+    cancelledOrders: 0,
     totalRevenue: 0,
     pendingRevenue: 0,
     confirmedRevenue: 0,
     walletBalance: 0
   });
 
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  // Modal states removed - now using navigation
 
   useEffect(() => {
     fetchOrders();
@@ -58,12 +61,14 @@ const OrderManagement = () => {
       
       setStats({
         totalOrders: data.totalOrders || 0,
-        pendingOrders: data.ordersByStatus?.pending || 0,
-        deliveredOrders: data.ordersByStatus?.delivered || 0,
-        totalRevenue: data.revenue?.totalRevenue || 0,
-        pendingRevenue: data.revenue?.pendingRevenue || 0,
-        confirmedRevenue: data.revenue?.deliveredRevenue || 0,
-        walletBalance: data.wallet?.balance || 0
+        pendingOrders: data.pendingOrders || 0,
+        processingOrders: data.processingOrders || 0,
+        deliveredOrders: data.deliveredOrders || 0,
+        cancelledOrders: data.cancelledOrders || 0,
+        totalRevenue: data.totalRevenue || 0,
+        pendingRevenue: data.pendingRevenue || 0,
+        confirmedRevenue: data.confirmedRevenue || 0,
+        walletBalance: data.walletBalance || 0
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -148,8 +153,22 @@ const OrderManagement = () => {
   const filteredOrders = orders.filter(order => {
     if (filters.status !== 'all' && order.status !== filters.status) return false;
     if (filters.paymentStatus !== 'all' && order.paymentStatus !== filters.paymentStatus) return false;
-    if (filters.search && !order.user.name.toLowerCase().includes(filters.search.toLowerCase()) &&
-        !order._id.includes(filters.search)) return false;
+    
+    if (filters.search) {
+      const searchTerm = filters.search.toLowerCase();
+      const userName = order.user?.name?.toLowerCase() || '';
+      const userEmail = order.user?.email?.toLowerCase() || '';
+      const orderId = order._id || '';
+      const userPhone = order.user?.phone?.toLowerCase() || '';
+      
+      if (!userName.includes(searchTerm) && 
+          !userEmail.includes(searchTerm) && 
+          !orderId.includes(searchTerm) && 
+          !userPhone.includes(searchTerm)) {
+        return false;
+      }
+    }
+    
     return true;
   });
 
@@ -164,7 +183,7 @@ const OrderManagement = () => {
   return (
     <div className="space-y-6">
       {/* Thống kê tổng quan */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -192,12 +211,12 @@ const OrderManagement = () => {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Tiền chờ xác nhận</p>
-              <p className="text-2xl font-bold text-orange-600">{formatCurrency(stats.pendingRevenue)}</p>
-              <p className="text-xs text-gray-500 mt-1">Từ đơn hàng chưa giao</p>
+              <p className="text-sm font-medium text-gray-600">Đang xử lý</p>
+              <p className="text-3xl font-bold text-cyan-600">{stats.processingOrders}</p>
+              <p className="text-xs text-gray-500 mt-1">Đã xác nhận</p>
             </div>
-            <div className="bg-orange-100 p-3 rounded-full">
-              <TrendingUp className="text-orange-600 w-6 h-6" />
+            <div className="bg-cyan-100 p-3 rounded-full">
+              <Truck className="text-cyan-600 w-6 h-6" />
             </div>
           </div>
         </div>
@@ -205,12 +224,25 @@ const OrderManagement = () => {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Số dư ví</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.walletBalance)}</p>
-              <p className="text-xs text-gray-500 mt-1">Tiền đã xác nhận</p>
+              <p className="text-sm font-medium text-gray-600">Đơn giao thành công</p>
+              <p className="text-3xl font-bold text-green-600">{stats.deliveredOrders}</p>
+              <p className="text-xs text-gray-500 mt-1">Đã hoàn thành</p>
             </div>
             <div className="bg-green-100 p-3 rounded-full">
-              <DollarSign className="text-green-600 w-6 h-6" />
+              <CheckCircle className="text-green-600 w-6 h-6" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Đơn đã hủy</p>
+              <p className="text-3xl font-bold text-red-600">{stats.cancelledOrders}</p>
+              <p className="text-xs text-gray-500 mt-1">Đã bị hủy bỏ</p>
+            </div>
+            <div className="bg-red-100 p-3 rounded-full">
+              <XCircle className="text-red-600 w-6 h-6" />
             </div>
           </div>
         </div>
@@ -296,9 +328,15 @@ const OrderManagement = () => {
       {/* Danh sách đơn hàng */}
       <div className="bg-white rounded-xl shadow-sm">
         <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-800">
             Danh sách đơn hàng ({filteredOrders.length})
           </h3>
+            <div className="text-sm text-gray-500 flex items-center">
+              <span className="mr-2">💡</span>
+              Click vào bất kỳ đơn hàng nào để xem chi tiết
+            </div>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -316,7 +354,12 @@ const OrderManagement = () => {
             </thead>
             <tbody>
               {filteredOrders.map((order) => (
-                <tr key={order._id} className="border-b border-gray-100 hover:bg-gray-50">
+                <tr 
+                  key={order._id} 
+                  className="border-b border-gray-100 hover:bg-blue-50 hover:shadow-sm transition-all duration-200 cursor-pointer"
+                  onClick={() => navigate(`/admin/orders/${order._id}`)}
+                  title="Click để xem chi tiết đơn hàng"
+                >
                   <td className="py-4 px-6">
                     <span className="font-mono text-sm text-purple-600">
                       #{order._id.slice(-8)}
@@ -324,13 +367,13 @@ const OrderManagement = () => {
                   </td>
                   <td className="py-4 px-6">
                     <div>
-                      <p className="font-medium text-gray-900">{order.user.name}</p>
-                      <p className="text-sm text-gray-500">{order.user.email}</p>
+                      <p className="font-medium text-gray-900">{order.user?.name || 'N/A'}</p>
+                      <p className="text-sm text-gray-500">{order.user?.email || 'N/A'}</p>
                     </div>
                   </td>
                   <td className="py-4 px-6">
                     <span className="font-semibold text-gray-900">
-                      {formatCurrency(order.totalPrice)}
+                      {formatCurrency(order.totalPrice || 0)}
                     </span>
                   </td>
                   <td className="py-4 px-6">
@@ -356,22 +399,14 @@ const OrderManagement = () => {
                     {formatDate(order.createdAt)}
                   </td>
                   <td className="py-4 px-6">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => {
-                          setSelectedOrder(order);
-                          setShowModal(true);
-                        }}
-                        className="text-blue-600 hover:text-blue-800 p-1"
-                        title="Xem chi tiết"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      {order.status !== 'delivered' && order.status !== 'cancelled' && (
+                    <div className="flex items-center space-x-2">
+                      {order.status !== 'delivered' && order.status !== 'cancelled' ? (
                         <select
-                          className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                          className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-500 hover:border-purple-500"
                           value={order.status}
                           onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          title="Cập nhật trạng thái đơn hàng"
                         >
                           <option value="pending">Chờ xử lý</option>
                           <option value="processing">Đang xử lý</option>
@@ -380,6 +415,10 @@ const OrderManagement = () => {
                           <option value="delivered">Đã giao</option>
                           <option value="cancelled">Hủy đơn</option>
                         </select>
+                      ) : (
+                        <span className="text-xs text-gray-400 italic">
+                          Đã hoàn thành
+                        </span>
                       )}
                     </div>
                   </td>
@@ -390,92 +429,7 @@ const OrderManagement = () => {
         </div>
       </div>
 
-      {/* Modal chi tiết đơn hàng */}
-      {showModal && selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Chi tiết đơn hàng #{selectedOrder._id.slice(-8)}</h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <XCircle className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Khách hàng</p>
-                  <p className="text-gray-900">{selectedOrder.user.name}</p>
-                  <p className="text-sm text-gray-500">{selectedOrder.user.email}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Tổng tiền</p>
-                  <p className="text-xl font-bold text-gray-900">{formatCurrency(selectedOrder.totalPrice)}</p>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-2">Địa chỉ giao hàng</p>
-                <p className="text-gray-900">{selectedOrder.shippingAddress}</p>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-2">Sản phẩm</p>
-                <div className="space-y-2">
-                  {selectedOrder.items.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium">{item.product.name}</p>
-                        <p className="text-sm text-gray-600">Số lượng: {item.quantity}</p>
-                      </div>
-                      <p className="font-semibold">{formatCurrency(item.price * item.quantity)}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Trạng thái đơn hàng</p>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${getStatusColor(selectedOrder.status)}`}>
-                    {getStatusIcon(selectedOrder.status)}
-                    <span className="ml-2">{getStatusText(selectedOrder.status)}</span>
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Trạng thái thanh toán</p>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    selectedOrder.paymentStatus === 'paid' 
-                      ? 'bg-green-100 text-green-800' 
-                      : selectedOrder.paymentStatus === 'unpaid'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {selectedOrder.paymentStatus === 'paid' ? 'Đã thanh toán' : 
-                     selectedOrder.paymentStatus === 'unpaid' ? 'Chưa thanh toán' : 'Đã hoàn tiền'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Ngày đặt hàng</p>
-                  <p className="text-gray-900">{formatDate(selectedOrder.createdAt)}</p>
-                </div>
-                {selectedOrder.deliveredAt && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Ngày giao hàng</p>
-                    <p className="text-gray-900">{formatDate(selectedOrder.deliveredAt)}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal removed - using navigation to OrderDetail page */}
     </div>
   );
 };
