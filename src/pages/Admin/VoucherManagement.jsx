@@ -35,72 +35,19 @@ const VoucherManagement = () => {
     try {
       setLoading(true);
       
-      // Force mock data để hiển thị 1/50
-      const mockVouchers = [
-        {
-          _id: '1',
-          code: 'GIAM15',
-          description: 'tặng khi đánh giá đơn hàng',
-          discountType: 'PERCENTAGE',
-          discountValue: 15,
-          maxDiscountAmount: 200000,
-          minOrderAmount: 200000,
-          startDate: '2025-09-22',
-          endDate: '2025-09-26',
-          maxIssued: 50,
-          usesCount: 0,
-          claimsCount: 1,
-          maxUsesPerUser: 1,
-          isActive: true,
-          rewardType: 'REVIEW',
-          createdAt: '2024-01-01T00:00:00.000Z'
-        },
-        {
-          _id: '2',
-          code: 'GIAM20',
-          description: 'GIẢM GIÁ',
-          discountType: 'PERCENTAGE',
-          discountValue: 20,
-          minOrderAmount: 200000,
-          startDate: '2025-09-21',
-          endDate: '2025-09-24',
-          maxIssued: 100,
-          usesCount: 0,
-          claimsCount: 0,
-          maxUsesPerUser: 1,
-          isActive: true,
-          rewardType: 'GENERAL',
-          createdAt: '2024-01-01T00:00:00.000Z'
-        },
-        {
-          _id: '3',
-          code: 'NEW10',
-          description: 'GIẢM CHO MUA HÀNG LẦN ĐẦU',
-          discountType: 'PERCENTAGE',
-          discountValue: 10,
-          minOrderAmount: 100000,
-          startDate: '2025-09-20',
-          endDate: '2025-09-23',
-          maxIssued: 75,
-          usesCount: 0,
-          claimsCount: 0,
-          maxUsesPerUser: 1,
-          isActive: true,
-          rewardType: 'GENERAL',
-          createdAt: '2024-01-01T00:00:00.000Z'
-        }
-      ];
-      setVouchers(mockVouchers);
+      // Gọi API thật để lấy danh sách voucher
+      const response = await voucherApi.getAllVouchers({
+        search: filters.search,
+        status: filters.status,
+        discountType: filters.discountType
+      });
       
-      // Comment out API call for now
-      // const response = await voucherApi.getAllVouchers({
-      //   search: filters.search,
-      //   status: filters.status,
-      //   discountType: filters.discountType
-      // });
-      // setVouchers(response.data.vouchers);
+      console.log('✅ Fetched vouchers from API:', response.data.vouchers);
+      setVouchers(response.data.vouchers);
+      
     } catch (error) {
-      console.error('Error fetching vouchers:', error);
+      console.error('❌ Error fetching vouchers:', error);
+      alert(`Lỗi khi tải voucher: ${error.response?.data?.message || error.message}`);
       setVouchers([]);
     } finally {
       setLoading(false);
@@ -109,48 +56,50 @@ const VoucherManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Loại bỏ isActive khỏi form data vì backend sẽ tự động tính toán
+    const { isActive, ...submitData } = formData;
+    
+    console.log('🔍 Form data being submitted:', submitData);
+    console.log('🔍 Editing voucher:', editingVoucher);
+    
     try {
       if (editingVoucher) {
-        // Update trong mock data
-        const updatedVouchers = vouchers.map(v => 
-          v._id === editingVoucher._id 
-            ? { ...v, ...formData, maxIssued: parseInt(formData.maxIssued) }
-            : v
-        );
-        setVouchers(updatedVouchers);
+        // Gọi API để cập nhật voucher
+        console.log('🔄 Updating voucher with ID:', editingVoucher._id);
+        const result = await voucherApi.updateVoucher(editingVoucher._id, submitData);
+        console.log('✅ Update result:', result);
         alert('Voucher đã được cập nhật thành công!');
-        
-        // Comment out API call for mock data
-        // await voucherApi.updateVoucher(editingVoucher._id, formData);
       } else {
-        // Create new voucher in mock data
-        const newVoucher = {
-          _id: Date.now().toString(),
-          ...formData,
-          maxIssued: parseInt(formData.maxIssued),
-          usesCount: 0,
-          claimsCount: 0,
-          createdAt: new Date().toISOString()
-        };
-        setVouchers([newVoucher, ...vouchers]);
+        // Gọi API để tạo voucher mới
+        console.log('➕ Creating new voucher');
+        const result = await voucherApi.createVoucher(submitData);
+        console.log('✅ Create result:', result);
         alert('Voucher đã được tạo thành công!');
-        
-        // Comment out API call for mock data
-        // await voucherApi.createVoucher(formData);
       }
       
       setShowModal(false);
       setEditingVoucher(null);
       resetForm();
-      // fetchVouchers(); // No need to refetch, we already updated local state
+      // Fetch lại danh sách sau khi update
+      await fetchVouchers();
     } catch (error) {
-      console.error('Error saving voucher:', error);
+      console.error('❌ Error saving voucher:', error);
+      console.error('❌ Error details:', error.response?.data);
       alert(error.response?.data?.message || 'Có lỗi xảy ra khi lưu voucher');
     }
   };
 
   const handleEdit = (voucher) => {
     setEditingVoucher(voucher);
+    
+    // Format date để phù hợp với input type="date" (YYYY-MM-DD)
+    const formatDate = (dateString) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toISOString().split('T')[0];
+    };
+    
     setFormData({
       code: voucher.code,
       description: voucher.description,
@@ -158,8 +107,8 @@ const VoucherManagement = () => {
       discountValue: voucher.discountValue,
       maxDiscountAmount: voucher.maxDiscountAmount || '',
       minOrderAmount: voucher.minOrderAmount || '',
-      startDate: voucher.startDate.split('T')[0],
-      endDate: voucher.endDate.split('T')[0],
+      startDate: formatDate(voucher.startDate),
+      endDate: formatDate(voucher.endDate),
       maxIssued: voucher.maxIssued,
       maxUsesPerUser: voucher.maxUsesPerUser,
       isActive: voucher.isActive,
@@ -171,14 +120,11 @@ const VoucherManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa voucher này?')) {
       try {
-        // Delete from mock data
-        const updatedVouchers = vouchers.filter(v => v._id !== id);
-        setVouchers(updatedVouchers);
+        // Gọi API để xóa voucher
+        await voucherApi.deleteVoucher(id);
         alert('Voucher đã được xóa thành công!');
-        
-        // Comment out API call for mock data
-        // await voucherApi.deleteVoucher(id);
-        // fetchVouchers();
+        // Fetch lại danh sách sau khi xóa
+        fetchVouchers();
       } catch (error) {
         console.error('Error deleting voucher:', error);
         alert(error.response?.data?.message || 'Có lỗi xảy ra khi xóa voucher');
@@ -236,15 +182,13 @@ const VoucherManagement = () => {
     const startDate = new Date(voucher.startDate);
     const endDate = new Date(voucher.endDate);
     
-    // Để kiểm tra trạng thái voucher, chỉ cần kiểm tra:
-    // 1. Voucher có được kích hoạt không
-    // 2. Thời gian có hợp lệ không
-    // KHÔNG cần kiểm tra claimsCount < maxIssued vì voucher đã phát hành vẫn có thể hoạt động
+    // Trạng thái chỉ dựa trên thời gian:
+    // - Hoạt động: thời gian hiện tại nằm trong khoảng [startDate, endDate]
+    // - Hết hạn: thời gian hiện tại không trong khoảng trên
     
     const isDateValid = now >= startDate && now <= endDate;
-    const isValidStatus = voucher.isActive && isDateValid;
     
-    return isValidStatus;
+    return isDateValid;
   };
 
   return (
@@ -632,18 +576,6 @@ const VoucherManagement = () => {
                 </div>
               </div>
 
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                />
-                <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
-                  Kích hoạt voucher
-                </label>
-              </div>
 
               <div className="flex justify-end space-x-3 pt-4">
                 <button

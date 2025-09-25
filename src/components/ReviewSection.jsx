@@ -210,23 +210,26 @@ const ReviewSection = ({
     );
   }
 
-  // (Tùy chọn) Style cho react-modal
+  // Style cho react-modal với scroll
   const customModalStyles = {
     content: {
       top: "50%",
       left: "50%",
-      right: "auto",
+      right: "auto", 
       bottom: "auto",
       marginRight: "-50%",
       transform: "translate(-50%, -50%)",
-      border: "1px solid #ccc",
-      borderRadius: "8px",
-      padding: "2rem",
+      border: "none",
+      borderRadius: "12px",
+      padding: "0",
       width: "90%",
-      maxWidth: "500px",
+      maxWidth: "600px",
+      maxHeight: "80vh", // Giới hạn chiều cao
+      overflow: "hidden", // Ẩn overflow của modal chính
+      boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
     },
     overlay: {
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      backgroundColor: "rgba(0, 0, 0, 0.6)",
       zIndex: 1000,
     },
   };
@@ -235,26 +238,43 @@ const ReviewSection = ({
     <div className="space-y-6">
       <Modal
         isOpen={isModalOpen}
-        //onRequestClose={() => setIsModalOpen(false)} // Cho phép đóng bằng Esc hoặc click nền
+        onRequestClose={() => setIsModalOpen(false)} // Cho phép đóng bằng Esc hoặc click nền
         style={customModalStyles}
         contentLabel="Reward Selection Modal"
       >
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold mb-4">
-            Cảm ơn bạn đã đánh giá!
-          </h2>
-          <p>Vui lòng chọn một phần thưởng:</p>
-          {rewards.map((reward, index) => (
-            <div
-              key={index}
-              className="p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200"
+        <div className="bg-white rounded-lg">
+          {/* Header với nút X */}
+          <div className="flex justify-between items-center p-6 border-b border-gray-200">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                🎉 Cảm ơn bạn đã đánh giá!
+              </h2>
+              <p className="text-gray-600">Vui lòng chọn phần thưởng bạn muốn nhận:</p>
+            </div>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
+              title="Đóng"
             >
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800 mb-2">
-                    {reward.type === 'VOUCHER' ? '🎟️ Voucher Giảm Giá' : '💎 Điểm Tích Lũy'}
-                  </h3>
-                  <p className="text-gray-600 mb-2">{reward.description}</p>
+              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          {/* Scrollable content */}
+          <div className="p-6 max-h-96 overflow-y-auto space-y-4">
+            {rewards.map((reward, index) => (
+              <div
+                key={index}
+                className="p-5 border border-gray-200 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg text-gray-800 mb-2">
+                      {reward.type === 'VOUCHER' ? '🎟️ Voucher Giảm Giá' : '💎 Điểm Tích Lũy'}
+                    </h3>
+                    <p className="text-gray-700 mb-3 font-medium">{reward.description}</p>
                   
                   {reward.type === 'VOUCHER' && (
                     <div className="space-y-1 text-sm text-gray-500">
@@ -284,16 +304,24 @@ const ReviewSection = ({
                   )}
                 </div>
                 
-                <Button 
-                  size="sm" 
-                  onClick={() => handleClaimReward(reward)}
-                  className="ml-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-                >
-                  Nhận
-                </Button>
+                  <Button 
+                    size="lg" 
+                    onClick={() => handleClaimReward(reward)}
+                    className="ml-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-semibold px-6 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+                  >
+                    ✨ Nhận
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          
+          {/* Footer */}
+          <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+            <p className="text-sm text-gray-500 text-center">
+              💡 Bạn có thể đóng cửa sổ này và chọn phần thưởng sau trong tài khoản
+            </p>
+          </div>
         </div>
       </Modal>
 
