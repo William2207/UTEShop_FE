@@ -534,8 +534,8 @@ const Dashboard = () => {
 
       {/* All Top Products Modal */}
       {showAllProductsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[80vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 max-w-4xl w-full mx-4 max-h-[80vh] overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
