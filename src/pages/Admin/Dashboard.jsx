@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { analyticsApi } from '../../api/analyticsApi';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalRevenue: 0,
     totalOrders: 0,
@@ -26,6 +28,9 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, month: '', value: 0 });
+  const [showAllProductsModal, setShowAllProductsModal] = useState(false);
+  const [allTopProducts, setAllTopProducts] = useState([]);
 
   // Generate years from 2003 to current year + 1
   const generateYears = () => {
@@ -85,7 +90,14 @@ const Dashboard = () => {
       }
 
       if (topProductsResponse.data.success) {
-        setTopProducts(topProductsResponse.data.data || []);
+        const topProductsData = topProductsResponse.data.data || [];
+        console.log('🔍 DEBUG - Frontend received top products:', topProductsData.slice(0, 5).map(p => ({
+          name: p.name,
+          sold: p.sold,
+          soldCount: p.soldCount,
+          revenue: p.revenue
+        })));
+        setTopProducts(topProductsData);
       }
 
       // Fetch recent completed orders for stats
@@ -132,6 +144,32 @@ const Dashboard = () => {
     }
   };
 
+  // Fetch all top products for modal
+  const fetchAllTopProducts = async () => {
+    try {
+      setShowAllProductsModal(true);
+      const response = await analyticsApi.getTopProducts({ limit: 50 }); // Get top 50 products
+      if (response.data.success) {
+        // API đã sắp xếp theo soldCount rồi, không cần sắp xếp lại
+        const topProductsData = response.data.data || [];
+        console.log('🔍 DEBUG - Modal received top products:', topProductsData.slice(0, 5).map(p => ({
+          name: p.name,
+          soldCount: p.soldCount,
+          sold: p.sold
+        })));
+        setAllTopProducts(topProductsData);
+      }
+    } catch (err) {
+      console.error('Error fetching all top products:', err);
+      alert('Không thể tải danh sách sản phẩm bán chạy. Vui lòng thử lại.');
+    }
+  };
+
+  // Navigate to product management
+  const handleProductCardClick = () => {
+    navigate('/admin/products');
+  };
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -144,6 +182,12 @@ const Dashboard = () => {
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN').format(amount) + ' ₫';
+  };
+
+  // Format currency for chart (already in millions)
+  const formatChartCurrency = (amount) => {
+    if (amount === 0) return '0 triệu ₫';
+    return new Intl.NumberFormat('vi-VN').format(amount) + ' triệu ₫';
   };
 
   const getStatusColor = (status) => {
@@ -164,7 +208,20 @@ const Dashboard = () => {
     }
   };
 
-  const maxValue = revenueData.length > 0 ? Math.max(...revenueData.map(item => item.value)) : 100;
+  // Calculate max value and round to nice numbers
+  const calculateNiceMaxValue = () => {
+    if (revenueData.length === 0) return 100;
+
+    const actualMax = Math.max(...revenueData.map(item => item.value));
+
+    // Round up to next hundred
+    const roundedMax = Math.ceil(actualMax / 100) * 100;
+
+    // Ensure minimum is 100
+    return Math.max(roundedMax, 100);
+  };
+
+  const maxValue = calculateNiceMaxValue();
 
   // Loading state
   if (loading) {
@@ -210,9 +267,6 @@ const Dashboard = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Tổng doanh thu</p>
               <p className="text-3xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
-              <p className={`text-sm mt-1 ${growth.revenue.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
-                <i className={`fas ${growth.revenue.startsWith('+') ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1`}></i>{growth.revenue}
-              </p>
             </div>
             <div className="bg-green-100 p-3 rounded-full">
               <i className="fas fa-coins text-green-600 text-xl"></i>
@@ -225,9 +279,6 @@ const Dashboard = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Đơn hàng</p>
               <p className="text-3xl font-bold text-gray-900">{stats.totalOrders.toLocaleString()}</p>
-              <p className={`text-sm mt-1 ${growth.orders.startsWith('+') ? 'text-blue-600' : 'text-red-600'}`}>
-                <i className={`fas ${growth.orders.startsWith('+') ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1`}></i>{growth.orders}
-              </p>
             </div>
             <div className="bg-blue-100 p-3 rounded-full">
               <i className="fas fa-shopping-cart text-blue-600 text-xl"></i>
@@ -240,9 +291,6 @@ const Dashboard = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Khách hàng</p>
               <p className="text-3xl font-bold text-gray-900">{stats.totalCustomers.toLocaleString()}</p>
-              <p className={`text-sm mt-1 ${growth.customers.startsWith('+') ? 'text-purple-600' : 'text-red-600'}`}>
-                <i className={`fas ${growth.customers.startsWith('+') ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1`}></i>{growth.customers}
-              </p>
             </div>
             <div className="bg-purple-100 p-3 rounded-full">
               <i className="fas fa-users text-purple-600 text-xl"></i>
@@ -250,14 +298,14 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-lg transition-shadow duration-300">
+        <div
+          className="bg-white rounded-xl shadow-sm p-6 hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+          onClick={handleProductCardClick}
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Sản phẩm</p>
               <p className="text-3xl font-bold text-gray-900">{stats.totalProducts.toLocaleString()}</p>
-              <p className={`text-sm mt-1 ${growth.products.startsWith('+') ? 'text-orange-600' : 'text-red-600'}`}>
-                <i className={`fas ${growth.products.startsWith('+') ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1`}></i>{growth.products}
-              </p>
             </div>
             <div className="bg-orange-100 p-3 rounded-full">
               <i className="fas fa-tshirt text-orange-600 text-xl"></i>
@@ -282,24 +330,86 @@ const Dashboard = () => {
               ))}
             </select>
           </div>
-          <div className="h-64 flex items-end justify-between space-x-2">
-            {revenueData.map((item, index) => (
-              <div key={index} className="flex flex-col items-center flex-1">
-                <div
-                  className="bg-gradient-to-t from-purple-600 to-purple-400 rounded-t w-full mb-2 transition-all duration-300 hover:from-purple-700 hover:to-purple-500"
-                  style={{ height: `${(item.value / maxValue) * 200}px` }}
-                ></div>
-                <span className="text-xs text-gray-600">{item.month}</span>
+          <div className="h-64 flex relative">
+            {/* Y-axis labels */}
+            <div className="flex flex-col justify-between h-full w-12 mr-4">
+              {(() => {
+                // Generate 5 nice rounded values for Y-axis (0, 25%, 50%, 75%, 100%)
+                const yAxisValues = [
+                  maxValue,
+                  Math.round(maxValue * 0.75 / 100) * 100,
+                  Math.round(maxValue * 0.5 / 100) * 100,
+                  Math.round(maxValue * 0.25 / 100) * 100,
+                  0
+                ];
+                return yAxisValues.map((value, index) => (
+                  <div key={index} className="text-xs text-gray-500 text-right">
+                    {value}
+                  </div>
+                ));
+              })()}
+              <div className="text-xs text-gray-600 font-medium mt-2 text-center">
+                (triệu ₫)
               </div>
-            ))}
+            </div>
+
+            {/* Chart bars */}
+            <div className="flex-1 flex items-end justify-between space-x-2">
+              {revenueData.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col items-center flex-1 cursor-pointer"
+                  onMouseEnter={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setTooltip({
+                      show: true,
+                      x: rect.left + rect.width / 2,
+                      y: rect.top - 10,
+                      month: item.month,
+                      value: item.value
+                    });
+                  }}
+                  onMouseLeave={() => setTooltip({ show: false, x: 0, y: 0, month: '', value: 0 })}
+                >
+                  <div
+                    className="bg-gradient-to-t from-purple-600 to-purple-400 rounded-t w-full mb-2 transition-all duration-300 hover:from-purple-700 hover:to-purple-500"
+                    style={{ height: `${(item.value / maxValue) * 200}px` }}
+                  ></div>
+                  <span className="text-xs text-gray-600">{item.month}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Tooltip */}
+            {tooltip.show && (
+              <div
+                className="fixed z-50 bg-gray-800 text-white px-3 py-2 rounded-lg shadow-lg text-sm pointer-events-none"
+                style={{
+                  left: `${tooltip.x}px`,
+                  top: `${tooltip.y}px`,
+                  transform: 'translateX(-50%)'
+                }}
+              >
+                <div className="font-medium">{tooltip.month}</div>
+                <div className="text-purple-300">Doanh thu: {formatChartCurrency(tooltip.value)}</div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Top Products */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-800">Sản phẩm bán chạy</h3>
-            <span className="text-sm text-gray-500">Top 10</span>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">Top 10 sản phẩm bán chạy nhất</h3>
+              <p className="text-xs text-gray-500 mt-1">Xếp hạng theo số lượng đã bán</p>
+            </div>
+            <span
+              className="text-sm text-purple-600 hover:text-purple-700 cursor-pointer"
+              onClick={fetchAllTopProducts}
+            >
+              Xem tất cả
+            </span>
           </div>
           <div className="space-y-4 max-h-96 overflow-y-auto">
             {topProducts.length > 0 ? topProducts.map((product, index) => (
@@ -334,7 +444,7 @@ const Dashboard = () => {
                     <p className="font-medium text-gray-800 truncate max-w-[150px]" title={product.name}>
                       {product.name}
                     </p>
-                    <p className="text-sm text-gray-600">{product.sold} đã bán</p>
+                    <p className="text-sm text-gray-600">{product.soldCount} đã bán</p>
                     {product.discountPercentage > 0 && product.originalPrice && (
                       <div className="flex items-center space-x-2 text-xs">
                         <span className="line-through text-gray-400">
@@ -421,6 +531,107 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* All Top Products Modal */}
+      {showAllProductsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-800">Tất cả sản phẩm bán chạy</h3>
+                  <p className="text-sm text-gray-600 mt-1">Xếp hạng theo số lượng sản phẩm đã bán (đơn hàng đã giao)</p>
+                </div>
+                <button
+                  onClick={() => setShowAllProductsModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              <div className="space-y-4">
+                {allTopProducts.length > 0 ? allTopProducts.map((product, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                    <div className="flex items-center space-x-4">
+                      {/* Ranking Number */}
+                      <div className="flex-shrink-0">
+                        <span className="text-xl font-bold text-purple-600">
+                          #{index + 1}
+                        </span>
+                      </div>
+
+                      {/* Product Image */}
+                      <div className="flex-shrink-0">
+                        {product.images && product.images.length > 0 ? (
+                          <img
+                            src={product.images[0]}
+                            alt={product.name}
+                            className="w-16 h-16 rounded-lg object-cover shadow-sm border border-gray-200"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div className={`w-16 h-16 bg-gradient-to-r ${product.color} rounded-lg flex items-center justify-center shadow-sm`} style={{ display: product.images && product.images.length > 0 ? 'none' : 'flex' }}>
+                          <i className="fas fa-tshirt text-white text-xl"></i>
+                        </div>
+                      </div>
+
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-800 text-lg" title={product.name}>
+                          {product.name}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1">{product.soldCount} đã bán</p>
+                        {product.discountPercentage > 0 && product.originalPrice && (
+                          <div className="flex items-center space-x-2 text-sm mt-1">
+                            <span className="line-through text-gray-400">
+                              {formatCurrency(product.originalPrice)}
+                            </span>
+                            <span className="bg-red-100 text-red-600 px-2 py-1 rounded">
+                              -{product.discountPercentage}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="space-y-2">
+                        <span className="text-blue-600 font-semibold text-lg block">
+                          {formatCurrency(product.discountedPrice || product.price || 0)}
+                        </span>
+                        <span className="text-green-600 font-semibold text-sm">
+                          Doanh thu: {formatCurrency(product.revenue)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="flex items-center justify-center h-32 text-gray-500">
+                    <div className="text-center">
+                      <i className="fas fa-box-open text-3xl mb-2"></i>
+                      <p>Chưa có dữ liệu sản phẩm bán chạy</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={() => setShowAllProductsModal(false)}
+                className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -27,6 +27,7 @@ const menuStructure = [
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState({ productManagement: false });
   const location = useLocation();
   const navigate = useNavigate();
@@ -97,10 +98,33 @@ const AdminLayout = () => {
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}>
-        <div className="flex items-center justify-center h-16 bg-gradient-to-r from-purple-600 to-indigo-600">
-          <h1 className="text-xl font-bold text-white">Fashion Admin</h1>
+      <div className={`fixed inset-y-0 left-0 z-50 bg-white shadow-lg transform transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'w-16' : 'w-64'
+        } ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="flex items-center justify-center h-16 bg-gradient-to-r from-purple-600 to-indigo-600 relative">
+          {!sidebarCollapsed && (
+            <h1 className="text-xl font-bold text-white">Fashion Admin</h1>
+          )}
+          {sidebarCollapsed && (
+            <div className="flex items-center justify-center w-10 h-10 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg hover:bg-white/30 transition-all duration-200 border border-white/20">
+              <svg
+                className="w-6 h-6 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                {/* Diamond/Gem logo */}
+                <path d="M6 2L3 6L12 22L21 6L18 2H6ZM6.5 4H17.5L19.5 7L12 19L4.5 7L6.5 4ZM8 5V6H16V5H8Z" />
+              </svg>
+            </div>
+          )}
+
+          {/* Toggle Button */}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-white hover:bg-white/20 p-1 rounded transition-colors duration-200 hidden lg:block"
+            title={sidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+          >
+            <i className={`fas ${sidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'} text-sm`}></i>
+          </button>
         </div>
 
         <nav className="mt-8">
@@ -110,35 +134,39 @@ const AdminLayout = () => {
                 {/* Main menu item */}
                 {item.hasSubmenu ? (
                   <button
-                    onClick={() => toggleSubmenu(item.key)}
-                    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors duration-200 ${isMenuItemActive(item)
+                    onClick={() => !sidebarCollapsed && toggleSubmenu(item.key)}
+                    className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'} px-4 py-3 rounded-lg transition-colors duration-200 ${isMenuItemActive(item)
                       ? 'bg-purple-50 text-purple-700 border-r-4 border-purple-600'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                       }`}
+                    title={sidebarCollapsed ? item.label : ''}
                   >
                     <div className="flex items-center">
-                      <i className={`${item.icon} mr-3 ${isMenuItemActive(item) ? 'text-purple-600' : ''
+                      <i className={`${item.icon} ${sidebarCollapsed ? '' : 'mr-3'} ${isMenuItemActive(item) ? 'text-purple-600' : ''
                         }`}></i>
-                      <span className="font-medium">{item.label}</span>
+                      {!sidebarCollapsed && <span className="font-medium">{item.label}</span>}
                     </div>
-                    <i className={`fas fa-chevron-${expandedMenus[item.key] ? 'down' : 'right'} text-sm transition-transform duration-200`}></i>
+                    {!sidebarCollapsed && (
+                      <i className={`fas fa-chevron-${expandedMenus[item.key] ? 'down' : 'right'} text-sm transition-transform duration-200`}></i>
+                    )}
                   </button>
                 ) : (
                   <Link
                     to={item.path}
-                    className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 ${isActive(item.path, item.exact)
+                    className={`flex items-center ${sidebarCollapsed ? 'justify-center' : ''} px-4 py-3 rounded-lg transition-colors duration-200 ${isActive(item.path, item.exact)
                       ? 'bg-purple-50 text-purple-700 border-r-4 border-purple-600'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                       }`}
+                    title={sidebarCollapsed ? item.label : ''}
                   >
-                    <i className={`${item.icon} mr-3 ${isActive(item.path, item.exact) ? 'text-purple-600' : ''
+                    <i className={`${item.icon} ${sidebarCollapsed ? '' : 'mr-3'} ${isActive(item.path, item.exact) ? 'text-purple-600' : ''
                       }`}></i>
-                    <span className="font-medium">{item.label}</span>
+                    {!sidebarCollapsed && <span className="font-medium">{item.label}</span>}
                   </Link>
                 )}
 
-                {/* Submenu items */}
-                {item.hasSubmenu && expandedMenus[item.key] && (
+                {/* Submenu items - only show when not collapsed */}
+                {item.hasSubmenu && expandedMenus[item.key] && !sidebarCollapsed && (
                   <div className="ml-6 mt-2 space-y-1">
                     {item.submenu.map((subItem) => (
                       <Link
@@ -162,7 +190,8 @@ const AdminLayout = () => {
       </div>
 
       {/* Main Content */}
-      <div className="lg:ml-64 min-h-screen">
+      <div className={`min-h-screen transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
+        }`}>
         {/* Header */}
         <header className="bg-white shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between px-6 py-4">
