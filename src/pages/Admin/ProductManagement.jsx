@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../../api/axiosConfig';
+import ImageUpload from '../../components/ImageUpload';
 
 const ProductManagement = () => {
     const [products, setProducts] = useState([]);
@@ -15,7 +16,7 @@ const ProductManagement = () => {
         description: '',
         price: '',
         stock: '',
-        images: '',
+        images: [],
         category: '',
         brand: '',
         discountPercentage: 0
@@ -85,7 +86,7 @@ const ProductManagement = () => {
                 price: parseFloat(formData.price),
                 stock: parseInt(formData.stock),
                 discountPercentage: parseFloat(formData.discountPercentage),
-                images: formData.images ? formData.images.split(',').map(url => url.trim()) : []
+                images: formData.images || []
             };
 
             if (editingProduct) {
@@ -101,7 +102,7 @@ const ProductManagement = () => {
                 description: '',
                 price: '',
                 stock: '',
-                images: '',
+                images: [],
                 category: '',
                 brand: '',
                 discountPercentage: 0
@@ -120,7 +121,7 @@ const ProductManagement = () => {
             description: product.description,
             price: product.price.toString(),
             stock: product.stock.toString(),
-            images: product.images ? product.images.join(', ') : '',
+            images: product.images || [],
             category: product.category._id,
             brand: product.brand._id,
             discountPercentage: product.discountPercentage
@@ -600,15 +601,9 @@ const ProductManagement = () => {
                                     </div>
 
                                     <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Hình ảnh (URL, cách nhau bởi dấu phẩy)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.images}
-                                            onChange={(e) => setFormData({ ...formData, images: e.target.value })}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                                        <ImageUpload
+                                            initialImages={formData.images}
+                                            onImagesChange={(images) => setFormData({ ...formData, images })}
                                         />
                                     </div>
                                 </div>
@@ -624,7 +619,7 @@ const ProductManagement = () => {
                                                 description: '',
                                                 price: '',
                                                 stock: '',
-                                                images: '',
+                                                images: [],
                                                 category: '',
                                                 brand: '',
                                                 discountPercentage: 0
