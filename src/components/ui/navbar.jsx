@@ -8,6 +8,7 @@ import {
   LogOut,
   ShoppingBasket,
   Heart,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +25,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useEffect } from "react";
 import { useCartNotifications } from "../../hooks/useCartNotifications";
 import { getCartItemCount } from "../../features/cart/cartSlice";
-
+import { NotificationBell } from "../NotificationBell";
 const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -68,13 +69,6 @@ const Navbar = () => {
 
         {/* Navigation Menu */}
         <div className="hidden md:flex items-center space-x-8">
-          <div
-            onClick={handleShopClick}
-            className="flex items-center space-x-1 cursor-pointer hover:text-blue-600 transition-colors"
-          >
-            <span className="text-gray-700 hover:text-blue-600">Shop</span>
-            <ChevronDown className="h-4 w-4 text-gray-700" />
-          </div>
           <span
             onClick={handleOnSaleClick}
             className="text-gray-700 hover:text-blue-600 cursor-pointer transition-colors"
@@ -136,6 +130,10 @@ const Navbar = () => {
             >
               <Heart className="h-5 w-5 text-gray-700" />
             </Button>
+          )}
+          {/* Notifications Icon */}
+          {user && (
+            <NotificationBell />
           )}
 
           {/* User / Auth */}
