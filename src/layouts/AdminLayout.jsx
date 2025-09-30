@@ -21,7 +21,7 @@ const AdminLayout = () => {
     { path: '/admin', icon: 'fas fa-chart-bar', label: 'Dashboard', exact: true },
     { path: '/admin/products', icon: 'fas fa-tshirt', label: 'Sản phẩm' },
     { path: '/admin/orders', icon: 'fas fa-shopping-cart', label: 'Quản lý đơn hàng' },
-    { path: '/admin/customers', icon: 'fas fa-users', label: 'Khách hàng' },
+    { path: '/admin/customers', icon: 'fas fa-users', label: 'Quản lý khách hàng' },
     { path: '/admin/vouchers', icon: 'fas fa-ticket-alt', label: 'Voucher' },
     { path: '/admin/points', icon: 'fas fa-star', label: 'Điểm tích lũy' },
     { path: '/admin/categories', icon: 'fas fa-tags', label: 'Danh mục' },
