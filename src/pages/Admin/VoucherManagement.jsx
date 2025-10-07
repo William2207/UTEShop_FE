@@ -15,9 +15,10 @@ const VoucherManagement = () => {
     minOrderAmount: '',
     startDate: '',
     endDate: '',
-    maxUses: '',
+    maxIssued: '',
     maxUsesPerUser: 1,
-    isActive: true
+    isActive: true,
+    rewardType: 'GENERAL'
   });
 
   const [filters, setFilters] = useState({
@@ -33,48 +34,21 @@ const VoucherManagement = () => {
   const fetchVouchers = async () => {
     try {
       setLoading(true);
+      
+      // Gọi API thật để lấy danh sách voucher
       const response = await voucherApi.getAllVouchers({
         search: filters.search,
         status: filters.status,
         discountType: filters.discountType
       });
+      
+      console.log('✅ Fetched vouchers from API:', response.data.vouchers);
       setVouchers(response.data.vouchers);
+      
     } catch (error) {
-      console.error('Error fetching vouchers:', error);
-      // Fallback to mock data for development
-      setVouchers([
-        {
-          _id: '1',
-          code: 'WELCOME10',
-          description: 'Giảm giá 10% cho khách hàng mới',
-          discountType: 'PERCENTAGE',
-          discountValue: 10,
-          maxDiscountAmount: 100000,
-          minOrderAmount: 500000,
-          startDate: '2024-01-01',
-          endDate: '2024-12-31',
-          maxUses: 1000,
-          usesCount: 150,
-          maxUsesPerUser: 1,
-          isActive: true,
-          createdAt: '2024-01-01T00:00:00.000Z'
-        },
-        {
-          _id: '2',
-          code: 'FREESHIP',
-          description: 'Miễn phí vận chuyển',
-          discountType: 'FREE_SHIP',
-          discountValue: 0,
-          minOrderAmount: 200000,
-          startDate: '2024-01-01',
-          endDate: '2024-12-31',
-          maxUses: 500,
-          usesCount: 89,
-          maxUsesPerUser: 2,
-          isActive: true,
-          createdAt: '2024-01-01T00:00:00.000Z'
-        }
-      ]);
+      console.error('❌ Error fetching vouchers:', error);
+      alert(`Lỗi khi tải voucher: ${error.response?.data?.message || error.message}`);
+      setVouchers([]);
     } finally {
       setLoading(false);
     }
@@ -82,27 +56,50 @@ const VoucherManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Loại bỏ isActive khỏi form data vì backend sẽ tự động tính toán
+    const { isActive, ...submitData } = formData;
+    
+    console.log('🔍 Form data being submitted:', submitData);
+    console.log('🔍 Editing voucher:', editingVoucher);
+    
     try {
       if (editingVoucher) {
-        await voucherApi.updateVoucher(editingVoucher._id, formData);
+        // Gọi API để cập nhật voucher
+        console.log('🔄 Updating voucher with ID:', editingVoucher._id);
+        const result = await voucherApi.updateVoucher(editingVoucher._id, submitData);
+        console.log('✅ Update result:', result);
         alert('Voucher đã được cập nhật thành công!');
       } else {
-        await voucherApi.createVoucher(formData);
+        // Gọi API để tạo voucher mới
+        console.log('➕ Creating new voucher');
+        const result = await voucherApi.createVoucher(submitData);
+        console.log('✅ Create result:', result);
         alert('Voucher đã được tạo thành công!');
       }
       
       setShowModal(false);
       setEditingVoucher(null);
       resetForm();
-      fetchVouchers();
+      // Fetch lại danh sách sau khi update
+      await fetchVouchers();
     } catch (error) {
-      console.error('Error saving voucher:', error);
+      console.error('❌ Error saving voucher:', error);
+      console.error('❌ Error details:', error.response?.data);
       alert(error.response?.data?.message || 'Có lỗi xảy ra khi lưu voucher');
     }
   };
 
   const handleEdit = (voucher) => {
     setEditingVoucher(voucher);
+    
+    // Format date để phù hợp với input type="date" (YYYY-MM-DD)
+    const formatDate = (dateString) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toISOString().split('T')[0];
+    };
+    
     setFormData({
       code: voucher.code,
       description: voucher.description,
@@ -110,11 +107,12 @@ const VoucherManagement = () => {
       discountValue: voucher.discountValue,
       maxDiscountAmount: voucher.maxDiscountAmount || '',
       minOrderAmount: voucher.minOrderAmount || '',
-      startDate: voucher.startDate.split('T')[0],
-      endDate: voucher.endDate.split('T')[0],
-      maxUses: voucher.maxUses,
+      startDate: formatDate(voucher.startDate),
+      endDate: formatDate(voucher.endDate),
+      maxIssued: voucher.maxIssued,
       maxUsesPerUser: voucher.maxUsesPerUser,
-      isActive: voucher.isActive
+      isActive: voucher.isActive,
+      rewardType: voucher.rewardType || 'GENERAL'
     });
     setShowModal(true);
   };
@@ -122,8 +120,10 @@ const VoucherManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa voucher này?')) {
       try {
+        // Gọi API để xóa voucher
         await voucherApi.deleteVoucher(id);
         alert('Voucher đã được xóa thành công!');
+        // Fetch lại danh sách sau khi xóa
         fetchVouchers();
       } catch (error) {
         console.error('Error deleting voucher:', error);
@@ -142,9 +142,10 @@ const VoucherManagement = () => {
       minOrderAmount: '',
       startDate: '',
       endDate: '',
-      maxUses: '',
+      maxIssued: '',
       maxUsesPerUser: 1,
-      isActive: true
+      isActive: true,
+      rewardType: 'GENERAL'
     });
   };
 
@@ -180,7 +181,14 @@ const VoucherManagement = () => {
     const now = new Date();
     const startDate = new Date(voucher.startDate);
     const endDate = new Date(voucher.endDate);
-    return voucher.isActive && voucher.usesCount < voucher.maxUses && now >= startDate && now <= endDate;
+    
+    // Trạng thái chỉ dựa trên thời gian:
+    // - Hoạt động: thời gian hiện tại nằm trong khoảng [startDate, endDate]
+    // - Hết hạn: thời gian hiện tại không trong khoảng trên
+    
+    const isDateValid = now >= startDate && now <= endDate;
+    
+    return isDateValid;
   };
 
   return (
@@ -188,17 +196,28 @@ const VoucherManagement = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Quản lý Voucher</h1>
-        <button
-          onClick={() => {
-            setEditingVoucher(null);
-            resetForm();
-            setShowModal(true);
-          }}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200"
-        >
-          <i className="fas fa-plus"></i>
-          <span>Tạo Voucher</span>
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => {
+              fetchVouchers();
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200"
+          >
+            <i className="fas fa-sync"></i>
+            <span>Refresh</span>
+          </button>
+          <button
+            onClick={() => {
+              setEditingVoucher(null);
+              resetForm();
+              setShowModal(true);
+            }}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200"
+          >
+            <i className="fas fa-plus"></i>
+            <span>Tạo Voucher</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -264,10 +283,16 @@ const VoucherManagement = () => {
                     Giảm giá
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Đã nhận
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Sử dụng
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Thời gian
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Loại
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Trạng thái
@@ -298,18 +323,43 @@ const VoucherManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {voucher.usesCount}/{voucher.maxUses}
+                        {voucher.claimsCount || 0}/{voucher.maxIssued || voucher.maxUses || '?'}
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div
+                          className="bg-green-600 h-2 rounded-full"
+                          style={{ width: `${((voucher.claimsCount || 0) / (voucher.maxIssued || voucher.maxUses || 1)) * 100}%` }}
+                        ></div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {voucher.usesCount}/{voucher.maxIssued || voucher.maxUses || 1}
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                         <div
                           className="bg-purple-600 h-2 rounded-full"
-                          style={{ width: `${(voucher.usesCount / voucher.maxUses) * 100}%` }}
+                          style={{ width: `${(voucher.usesCount / (voucher.maxIssued || voucher.maxUses || 1)) * 100}%` }}
                         ></div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div>{new Date(voucher.startDate).toLocaleDateString('vi-VN')}</div>
                       <div>{new Date(voucher.endDate).toLocaleDateString('vi-VN')}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        voucher.rewardType === 'REVIEW' 
+                          ? 'bg-blue-100 text-blue-800'
+                          : voucher.rewardType === 'FIRST_ORDER'
+                          ? 'bg-purple-100 text-purple-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {voucher.rewardType === 'REVIEW' ? 'Đánh giá' :
+                         voucher.rewardType === 'FIRST_ORDER' ? 'Đơn đầu' :
+                         voucher.rewardType === 'BIRTHDAY' ? 'Sinh nhật' :
+                         voucher.rewardType === 'LOYALTY' ? 'Thân thiết' : 'Chung'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -390,6 +440,26 @@ const VoucherManagement = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Loại phần thưởng *
+                  </label>
+                  <select
+                    value={formData.rewardType}
+                    onChange={(e) => setFormData({ ...formData, rewardType: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required
+                  >
+                    <option value="GENERAL">Voucher chung</option>
+                    <option value="REVIEW">Phần thưởng đánh giá</option>
+                    <option value="FIRST_ORDER">Đơn hàng đầu tiên</option>
+                    <option value="BIRTHDAY">Sinh nhật</option>
+                    <option value="LOYALTY">Khách hàng thân thiết</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Mô tả *
@@ -452,12 +522,12 @@ const VoucherManagement = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Số lần sử dụng tối đa *
+                    Số voucher phát hành *
                   </label>
                   <input
                     type="number"
-                    value={formData.maxUses}
-                    onChange={(e) => setFormData({ ...formData, maxUses: e.target.value })}
+                    value={formData.maxIssued}
+                    onChange={(e) => setFormData({ ...formData, maxIssued: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     min="1"
                     required
@@ -506,18 +576,6 @@ const VoucherManagement = () => {
                 </div>
               </div>
 
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                />
-                <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
-                  Kích hoạt voucher
-                </label>
-              </div>
 
               <div className="flex justify-end space-x-3 pt-4">
                 <button

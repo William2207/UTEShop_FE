@@ -35,6 +35,10 @@ const pointsApi = {
     return axios.post('/points/redeem', data);
   },
 
+  usePointsForOrder: (data) => {
+    return axios.post('/points/use-for-order', data);
+  },
+
   getPointsConfig: () => {
     return axios.get('/points/config');
   }

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Provider } from "react-redux";
 import { SocketProvider } from "./context/SocketContext";
 import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
 import Modal from "react-modal";
 
@@ -35,6 +36,10 @@ import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/Admin/Dashboard";
 import VoucherManagement from "./pages/Admin/VoucherManagement";
 import PointsManagement from "./pages/Admin/PointsManagement";
+import OrderManagement from "./pages/Admin/OrderManagement";
+import OrderDetailManagement from "./pages/Admin/OrderDetailManagement";
+import CustomerManagement from "./pages/Admin/CustomerManagement";
+import CustomerOrderDetail from "./pages/Admin/CustomerOrderDetail";
 import CategoryManagement from "./pages/Admin/CategoryManagement";
 import BrandManagement from "./pages/Admin/BrandManagement";
 import ProductManagement from "./pages/Admin/ProductManagement";
@@ -110,6 +115,10 @@ function App() {
               }
             >
               <Route index element={<Dashboard />} />
+              <Route path="orders" element={<OrderManagement />} />
+              <Route path="orders/:orderId" element={<OrderDetailManagement />} />
+              <Route path="customers" element={<CustomerManagement />} />
+              <Route path="customers/:customerId/orders" element={<CustomerOrderDetail />} />
               <Route path="vouchers" element={<VoucherManagement />} />
               <Route path="points" element={<PointsManagement />} />
 

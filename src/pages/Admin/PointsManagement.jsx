@@ -4,6 +4,12 @@ import pointsApi from '../../api/pointsApi';
 const PointsManagement = () => {
   const [customers, setCustomers] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [stats, setStats] = useState({
+    totalPointsIssued: 0,
+    totalPointsRedeemed: 0,
+    activeMembers: 0,
+    membersByTier: { BRONZE: 0, SILVER: 0, GOLD: 0 }
+  });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('customers');
   const [showModal, setShowModal] = useState(false);
@@ -29,96 +35,124 @@ const PointsManagement = () => {
     goldThreshold: 5000
   });
 
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pages: 1,
+    total: 0
+  });
+
   useEffect(() => {
     fetchCustomers();
     fetchTransactions();
+    fetchStats();
+    loadPointsConfig();
   }, []);
 
-  const fetchCustomers = async () => {
+  // Refresh data when filters change
+  useEffect(() => {
+    if (activeTab === 'customers') {
+      fetchCustomers();
+    } else {
+      fetchTransactions();
+    }
+  }, [filters.search, filters.tier, filters.transactionType]);
+
+  // Refresh data when active tab changes
+  useEffect(() => {
+    if (activeTab === 'customers') {
+      fetchCustomers();
+    } else {
+      fetchTransactions();
+    }
+  }, [activeTab]);
+
+  const fetchCustomers = async (page = 1) => {
     try {
       setLoading(true);
-      // TODO: Replace with actual API call
-      // const response = await axios.get('/api/admin/customers');
-      // setCustomers(response.data);
+      const response = await pointsApi.getCustomersWithPoints({
+        page,
+        limit: 10,
+        search: filters.search,
+        tier: filters.tier === 'all' ? undefined : filters.tier
+      });
       
-      // Mock data for now
-      setCustomers([
-        {
-          _id: '1',
-          name: 'Nguyễn Văn A',
-          email: 'user1@example.com',
-          loyaltyPoints: { balance: 2500, tier: 'SILVER' },
-          totalSpent: 5000000,
-          joinDate: '2024-01-15T00:00:00.000Z'
-        },
-        {
-          _id: '2',
-          name: 'Trần Thị B',
-          email: 'user2@example.com',
-          loyaltyPoints: { balance: 8500, tier: 'GOLD' },
-          totalSpent: 12000000,
-          joinDate: '2024-02-20T00:00:00.000Z'
-        },
-        {
-          _id: '3',
-          name: 'Lê Văn C',
-          email: 'user3@example.com',
-          loyaltyPoints: { balance: 500, tier: 'BRONZE' },
-          totalSpent: 800000,
-          joinDate: '2024-03-10T00:00:00.000Z'
-        }
-      ]);
+      setCustomers(response.data.customers);
+      setPagination(response.data.pagination);
     } catch (error) {
       console.error('Error fetching customers:', error);
+      // Fallback to empty array on error
+      setCustomers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (page = 1) => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await axios.get('/api/admin/point-transactions');
-      // setTransactions(response.data);
+      const response = await pointsApi.getPointTransactions({
+        page,
+        limit: 10,
+        search: filters.search,
+        type: filters.transactionType === 'all' ? undefined : filters.transactionType
+      });
       
-      // Mock data for now
-      setTransactions([
-        {
-          _id: '1',
-          user: { _id: '1', name: 'Nguyễn Văn A', email: 'user1@example.com' },
-          type: 'EARNED',
-          points: 50,
-          description: 'Tích điểm từ đơn hàng #ORD001',
-          order: '#ORD001',
-          createdAt: '2024-01-20T10:30:00.000Z'
-        },
-        {
-          _id: '2',
-          user: { _id: '2', name: 'Trần Thị B', email: 'user2@example.com' },
-          type: 'REDEEMED',
-          points: 100,
-          description: 'Đổi điểm lấy voucher giảm giá',
-          createdAt: '2024-01-19T14:15:00.000Z'
-        },
-        {
-          _id: '3',
-          user: { _id: '1', name: 'Nguyễn Văn A', email: 'user1@example.com' },
-          type: 'ADJUSTMENT',
-          points: 500,
-          description: 'Điều chỉnh điểm thưởng sinh nhật',
-          createdAt: '2024-01-18T09:00:00.000Z'
-        }
-      ]);
+      setTransactions(response.data.transactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
+      // Fallback to empty array on error
+      setTransactions([]);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const response = await pointsApi.getPointsStats();
+      setStats(response.data.overview);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      // Keep default stats on error
+    }
+  };
+
+  const loadPointsConfig = async () => {
+    try {
+      const response = await pointsApi.getPointsConfig();
+      setPointsConfig({
+        pointsPerOrder: response.data.pointsPerOrder,
+        pointsValue: response.data.pointsValue,
+        bronzeThreshold: 0,
+        silverThreshold: response.data.silverThreshold,
+        goldThreshold: response.data.goldThreshold
+      });
+    } catch (error) {
+      console.error('Error loading points config:', error);
+      // Keep default config on error
+    }
+  };
+
+  const savePointsConfig = async () => {
+    try {
+      await pointsApi.updatePointsConfig({
+        pointsValue: pointsConfig.pointsValue,
+        silverThreshold: pointsConfig.silverThreshold,
+        goldThreshold: pointsConfig.goldThreshold
+      });
+      alert('Cấu hình đã được lưu thành công!');
+    } catch (error) {
+      console.error('Error saving points config:', error);
+      alert('Có lỗi xảy ra khi lưu cấu hình!');
     }
   };
 
   const handlePointsAdjustment = async (e) => {
     e.preventDefault();
     try {
-      // TODO: API call to adjust points
-      console.log('Adjusting points:', pointsForm);
+      await pointsApi.createPointTransaction({
+        userId: pointsForm.userId,
+        type: pointsForm.type,
+        points: parseInt(pointsForm.points),
+        description: pointsForm.description
+      });
       
       setShowModal(false);
       setPointsForm({
@@ -127,10 +161,16 @@ const PointsManagement = () => {
         points: '',
         description: ''
       });
+      
+      // Refresh data
       fetchCustomers();
       fetchTransactions();
+      fetchStats();
+      
+      alert('Điều chỉnh điểm thành công!');
     } catch (error) {
       console.error('Error adjusting points:', error);
+      alert('Có lỗi xảy ra khi điều chỉnh điểm!');
     }
   };
 
@@ -193,21 +233,6 @@ const PointsManagement = () => {
     }
   };
 
-  const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = customer.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-                         customer.email.toLowerCase().includes(filters.search.toLowerCase());
-    const matchesTier = filters.tier === 'all' || customer.loyaltyPoints.tier === filters.tier;
-    
-    return matchesSearch && matchesTier;
-  });
-
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.user.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-                         transaction.description.toLowerCase().includes(filters.search.toLowerCase());
-    const matchesType = filters.transactionType === 'all' || transaction.type === filters.transactionType;
-    
-    return matchesSearch && matchesType;
-  });
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -236,7 +261,7 @@ const PointsManagement = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center">
             <div className="bg-yellow-100 p-3 rounded-full mr-4">
@@ -244,7 +269,7 @@ const PointsManagement = () => {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-600">Tổng điểm đã phát</p>
-              <p className="text-2xl font-bold text-gray-900">125,430</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalPointsIssued?.toLocaleString() || 0}</p>
             </div>
           </div>
         </div>
@@ -256,31 +281,43 @@ const PointsManagement = () => {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-600">Điểm đã đổi</p>
-              <p className="text-2xl font-bold text-gray-900">23,150</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalPointsRedeemed?.toLocaleString() || 0}</p>
             </div>
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center">
-            <div className="bg-blue-100 p-3 rounded-full mr-4">
-              <i className="fas fa-users text-blue-600 text-xl"></i>
+            <div className="bg-orange-100 p-3 rounded-full mr-4">
+              <i className="fas fa-medal text-orange-600 text-xl"></i>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">Thành viên tích cực</p>
-              <p className="text-2xl font-bold text-gray-900">1,267</p>
+              <p className="text-sm font-medium text-gray-600">Thành viên hạng đồng</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.membersByTier?.BRONZE?.toLocaleString() || 0}</p>
             </div>
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center">
-            <div className="bg-purple-100 p-3 rounded-full mr-4">
-              <i className="fas fa-crown text-purple-600 text-xl"></i>
+            <div className="bg-gray-100 p-3 rounded-full mr-4">
+              <i className="fas fa-medal text-gray-600 text-xl"></i>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">Thành viên VIP</p>
-              <p className="text-2xl font-bold text-gray-900">89</p>
+              <p className="text-sm font-medium text-gray-600">Thành viên hạng bạc</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.membersByTier?.SILVER?.toLocaleString() || 0}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center">
+            <div className="bg-yellow-100 p-3 rounded-full mr-4">
+              <i className="fas fa-crown text-yellow-600 text-xl"></i>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Thành viên hạng vàng</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.membersByTier?.GOLD?.toLocaleString() || 0}</p>
             </div>
           </div>
         </div>
@@ -327,7 +364,10 @@ const PointsManagement = () => {
             />
           </div>
         </div>
-        <button className="mt-4 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+        <button 
+          onClick={savePointsConfig}
+          className="mt-4 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+        >
           Lưu cấu hình
         </button>
       </div>
@@ -416,13 +456,13 @@ const PointsManagement = () => {
                     <th className="text-left py-3 px-4 font-medium text-gray-600">Khách hàng</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600">Hạng</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600">Điểm hiện tại</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-600">Tổng chi tiêu</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-600">Ngày tham gia</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600">Điểm sử dụng</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600">Điểm còn lại</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredCustomers.map((customer) => (
+                  {customers.map((customer) => (
                     <tr key={customer._id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-4 px-4">
                         <div>
@@ -444,11 +484,21 @@ const PointsManagement = () => {
                           ≈ {formatCurrency(calculateAmountFromPoints(customer.loyaltyPoints.balance))}
                         </div>
                       </td>
-                      <td className="py-4 px-4 font-medium">
-                        {formatCurrency(customer.totalSpent || 0)}
+                      <td className="py-4 px-4">
+                        <div className="font-bold text-red-600">
+                          {customer.pointsUsed ? customer.pointsUsed.toLocaleString() : 0} điểm
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          ≈ {formatCurrency(calculateAmountFromPoints(customer.pointsUsed || 0))}
+                        </div>
                       </td>
-                      <td className="py-4 px-4 text-gray-600">
-                        {new Date(customer.joinDate).toLocaleDateString('vi-VN')}
+                      <td className="py-4 px-4">
+                        <div className="font-bold text-green-600">
+                          {customer.remainingPoints ? customer.remainingPoints.toLocaleString() : customer.loyaltyPoints.balance.toLocaleString()} điểm
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          ≈ {formatCurrency(calculateAmountFromPoints(customer.remainingPoints || customer.loyaltyPoints.balance))}
+                        </div>
                       </td>
                       <td className="py-4 px-4">
                         <button
@@ -476,7 +526,7 @@ const PointsManagement = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTransactions.map((transaction) => (
+                  {transactions.map((transaction) => (
                     <tr key={transaction._id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-4 px-4">
                         <div>
