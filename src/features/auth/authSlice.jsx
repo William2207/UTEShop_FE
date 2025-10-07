@@ -14,8 +14,8 @@ const createApiThunk = (name, url, method = "post") => {
       // Sử dụng rejectWithValue để gửi payload lỗi có cấu trúc đến reducer
       return thunkAPI.rejectWithValue(
         err.response?.data?.error ||
-        err.response?.data?.message ||
-        "Đã xảy ra lỗi"
+          err.response?.data?.message ||
+          "Đã xảy ra lỗi"
       );
     }
   });
@@ -45,14 +45,14 @@ export const loginUser = createApiThunk("auth/login", "/auth/login");
 // Thêm vào cuối file, trước export default
 // Thunk để lấy thông tin user
 export const fetchUserProfile = createAsyncThunk(
-  'auth/fetchProfile',
+  "auth/fetchProfile",
   async (_, thunkAPI) => {
     try {
-      const { data } = await api.get('/auth/me');
+      const { data } = await api.get("/auth/me");
       return data.user;
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message || 'Không thể tải thông tin người dùng'
+        error.response?.data?.message || "Không thể tải thông tin người dùng"
       );
     }
   }
@@ -179,6 +179,9 @@ const authSlice = createSlice({
 });
 
 // ------------------- Exports -------------------
+
+// Selector để lấy token hiện tại
+export const selectCurrentToken = (state) => state.auth.token;
 
 // Export các actions đồng bộ
 export const { logout, clearFeedback, updateUserProfile } = authSlice.actions;
